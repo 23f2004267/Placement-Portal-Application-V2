@@ -1,6 +1,7 @@
 from flask import Flask
 from config import Config
 from models import db
+from werkzeug.security import generate_password_hash
 
 from models.user import User
 from models.student import Student
@@ -22,7 +23,7 @@ with app.app_context():
     if not admin:
         admin = User(
             username="Vimlendu",
-            password="Vimlendu@2003",
+            password=generate_password_hash("Vimlendu@2003"),
             role="admin"
         )
         db.session.add(admin)
@@ -30,4 +31,4 @@ with app.app_context():
 if __name__ == "__main__":
     app.run(debug=True)
 
-    
+
