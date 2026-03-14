@@ -11,7 +11,7 @@ from models import db
 admin_bp = Blueprint("admin", __name__)
 
 def verify_admin(user_id):
-    user = db.sesion.get(User, user_id)
+    user = db.session.get(User, user_id)
     if user is None:
         return False
     if user.role != "admin":
@@ -47,7 +47,7 @@ def approve_company(company_id):
     if not verify_admin(user_id):
         return jsonify({"message": "Access denied"}), 403
 
-    company = Company.db.sesion.get(Company, company_id)
+    company = db.session.get(Company, company_id)
 
     if not company:
         return jsonify({"message": "Company not found"}), 404
@@ -69,7 +69,7 @@ def remove_company(company_id):
     if not verify_admin(user_id):
         return jsonify({"message": "Access denied"}), 403
 
-    company = Company.db.sesion.get(Company, company_id)
+    company = db.session.get(Company, company_id)
 
     if not company:
         return jsonify({"message": "Company not found"}), 404
@@ -150,7 +150,7 @@ def blacklist_user(user_id):
     if not verify_admin(admin_id):
         return jsonify({"message": "Access denied"}), 403
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
 
     if not user:
         return jsonify({"message": "User not found"}), 404
