@@ -7,6 +7,7 @@ from models.drive import Drive
 from models.application import Application
 from models.company import Company
 from models import db
+from extensions import cache
 
 
 student_bp = Blueprint("student", __name__)
@@ -51,6 +52,7 @@ def student_dashboard():
 
 @student_bp.route("/student/drives", methods=["GET"])
 @jwt_required()
+@cache.cached(timeout=60, query_string=True)
 def view_drives():
 
     user_id = get_jwt_identity()
