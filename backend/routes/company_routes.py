@@ -12,7 +12,6 @@ from models import db
 company_bp = Blueprint("company", __name__)
 
 
-
 def verify_company(user_id):
 
     user = db.session.get(User, user_id)
@@ -34,7 +33,6 @@ def verify_company(user_id):
     return company
 
 
-
 @company_bp.route("/company/dashboard", methods=["GET"])
 @jwt_required()
 def company_dashboard():
@@ -52,7 +50,6 @@ def company_dashboard():
         "company_name": company.company_name,
         "total_drives": total_drives
     })
-
 
 
 @company_bp.route("/company/create_drive", methods=["POST"])
@@ -112,7 +109,6 @@ def my_drives():
     return jsonify(result)
 
 
-
 @company_bp.route("/company/applicants/<int:drive_id>", methods=["GET"])
 @jwt_required()
 def view_applicants(drive_id):
@@ -141,7 +137,6 @@ def view_applicants(drive_id):
     return jsonify(result)
 
 
-
 @company_bp.route("/company/update_application/<int:app_id>", methods=["PUT"])
 @jwt_required()
 def update_application(app_id):
@@ -153,14 +148,31 @@ def update_application(app_id):
     if not company:
         return jsonify({"message": "Access denied"}), 403
 
-    data = request.get_json()
-
-    new_status = data.get("status")
-
     application = db.session.get(Application, app_id)
 
     if not application:
         return jsonify({"message": "Application not found"}), 404
+
+    drive = db.session.get(Drive, application.drive_id)
+
+    if drive.company_id != company.id:
+        return jsonify({"message": "Unauthorized action"}), 403
+
+    data = request.get_json()
+
+    new_status = data.get("status")
+
+    valid_status = [
+        "Applied",
+        "Shortlisted",
+        "Interview",
+        "Offer",
+        "Rejected",
+        "Placed"
+    ]
+
+    if new_status not in valid_status:
+        return jsonify({"message": "Invalid status"}), 400
 
     application.status = new_status
 

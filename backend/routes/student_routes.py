@@ -131,6 +131,9 @@ def apply_drive(drive_id):
     if not drive:
         return jsonify({"message": "Drive not found"}), 404
 
+    if drive.status != "Approved":
+        return jsonify({"message": "Drive not available for application"}), 400
+    
     existing_application = Application.query.filter_by(
         student_id=student.id,
         drive_id=drive_id

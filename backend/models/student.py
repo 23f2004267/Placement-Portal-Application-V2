@@ -12,4 +12,3 @@ class Student(db.Model):
     resume=db.Column(db.String(100))
     
     
-    
