@@ -3,6 +3,7 @@ from config import Config
 from models import db
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 from extensions import cache
 
@@ -21,6 +22,8 @@ from routes.admin_routes import admin_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+CORS(app)
 
 db.init_app(app)
 

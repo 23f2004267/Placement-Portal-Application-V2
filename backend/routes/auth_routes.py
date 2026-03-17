@@ -83,13 +83,12 @@ def register_company():
     return jsonify({"message": "Company registered. Waiting for admin approval."})
 
 
-
 @auth_bp.route("/login", methods=["POST"])
 def login():
 
     data = request.get_json()
 
-    username = data.get("username")
+    username = data.get("email")
     password = data.get("password")
 
     user = User.query.filter_by(username=username).first()
@@ -103,6 +102,6 @@ def login():
     token = create_access_token(identity=user.id)
 
     return jsonify({
-        "token": token,
+        "access_token": token,
         "role": user.role
     })
