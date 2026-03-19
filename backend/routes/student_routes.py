@@ -12,9 +12,6 @@ from extensions import cache
 
 student_bp = Blueprint("student", __name__)
 
-
-
-
 def verify_student(user_id):
 
     user = db.session.get(User, user_id)
@@ -25,17 +22,19 @@ def verify_student(user_id):
     if user.role != "student":
         return None
 
+    if user.is_active == False:
+        return None
+
     student = Student.query.filter_by(user_id=user_id).first()
 
     return student
-
 
 
 @student_bp.route("/student/dashboard", methods=["GET"])
 @jwt_required()
 def student_dashboard():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     student = verify_student(user_id)
 
@@ -52,10 +51,9 @@ def student_dashboard():
 
 @student_bp.route("/student/drives", methods=["GET"])
 @jwt_required()
-@cache.cached(timeout=60, query_string=True)
 def view_drives():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     student = verify_student(user_id)
 
@@ -64,29 +62,32 @@ def view_drives():
 
     drives = Drive.query.filter_by(status="Approved").all()
 
+    print("Approved drives count:", len(drives))
+
     result = []
 
     for d in drives:
 
         company = db.session.get(Company, d.company_id)
 
-        result.append({
-            "drive_id": d.id,
-            "company_name": company.company_name,
-            "job_title": d.job_title,
-            "salary": d.salary
-        })
+        if company:
+            result.append({
+                "drive_id": d.id,
+                "company_name": company.company_name,
+                "job_title": d.job_title,
+                "salary": d.salary
+            })
+
+    print("Drives result:", result)
 
     return jsonify(result)
-
-
 
 
 @student_bp.route("/student/search_drives", methods=["GET"])
 @jwt_required()
 def search_drives():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     student = verify_student(user_id)
 
@@ -106,22 +107,57 @@ def search_drives():
 
         company = db.session.get(Company, d.company_id)
 
-        result.append({
-            "drive_id": d.id,
-            "company": company.company_name,
-            "job_title": d.job_title,
-            "salary": d.salary
-        })
+        if company:
+            result.append({
+                "drive_id": d.id,
+                "company_name": company.company_name,
+                "job_title": d.job_title,
+                "salary": d.salary
+            })
 
     return jsonify(result)
 
+
+@student_bp.route("/student/drive/<int:drive_id>", methods=["GET"])
+@jwt_required()
+def drive_details(drive_id):
+
+    user_id = int(get_jwt_identity())
+
+    student = verify_student(user_id)
+
+    if not student:
+        return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
+    if drive.status != "Approved":
+        return jsonify({"message": "Drive not available"}), 400
+
+    company = db.session.get(Company, drive.company_id)
+
+    company_name = ""
+    if company:
+        company_name = company.company_name
+
+    return jsonify({
+        "drive_id": drive.id,
+        "company_name": company_name,
+        "job_title": drive.job_title,
+        "job_description": drive.job_description,
+        "salary": drive.salary,
+        "status": drive.status
+    })
 
 
 @student_bp.route("/student/apply/<int:drive_id>", methods=["POST"])
 @jwt_required()
 def apply_drive(drive_id):
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     student = verify_student(user_id)
 
@@ -156,12 +192,11 @@ def apply_drive(drive_id):
     return jsonify({"message": "Application submitted"})
 
 
-
 @student_bp.route("/student/my_applications", methods=["GET"])
 @jwt_required()
 def my_applications():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     student = verify_student(user_id)
 
@@ -176,10 +211,11 @@ def my_applications():
 
         drive = db.session.get(Drive, a.drive_id)
 
-        result.append({
-            "application_id": a.id,
-            "job_title": drive.job_title,
-            "status": a.status
-        })
+        if drive:
+            result.append({
+                "application_id": a.id,
+                "job_title": drive.job_title,
+                "status": a.status
+            })
 
     return jsonify(result)

@@ -22,6 +22,9 @@ def verify_company(user_id):
     if user.role != "company":
         return None
 
+    if user.is_active == False:
+        return None
+
     company = Company.query.filter_by(user_id=user_id).first()
 
     if company is None:
@@ -37,7 +40,7 @@ def verify_company(user_id):
 @jwt_required()
 def company_dashboard():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     company = verify_company(user_id)
 
@@ -56,7 +59,7 @@ def company_dashboard():
 @jwt_required()
 def create_drive():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     company = verify_company(user_id)
 
@@ -69,10 +72,27 @@ def create_drive():
     job_description = data.get("job_description")
     salary = data.get("salary")
 
+    if not job_title or str(job_title).strip() == "":
+        return jsonify({"message": "Job title is required"}), 400
+
+    if not job_description or str(job_description).strip() == "":
+        return jsonify({"message": "Job description is required"}), 400
+
+    if salary is None or str(salary).strip() == "":
+        return jsonify({"message": "Salary is required"}), 400
+
+    try:
+        salary = int(salary)
+    except:
+        return jsonify({"message": "Salary must be a number"}), 400
+
+    if salary <= 0:
+        return jsonify({"message": "Salary must be greater than 0"}), 400
+
     drive = Drive(
         company_id=company.id,
-        job_title=job_title,
-        job_description=job_description,
+        job_title=job_title.strip(),
+        job_description=job_description.strip(),
         salary=salary,
         status="Pending"
     )
@@ -87,7 +107,7 @@ def create_drive():
 @jwt_required()
 def my_drives():
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     company = verify_company(user_id)
 
@@ -113,12 +133,20 @@ def my_drives():
 @jwt_required()
 def view_applicants(drive_id):
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     company = verify_company(user_id)
 
     if not company:
         return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
+    if drive.company_id != company.id:
+        return jsonify({"message": "Unauthorized action"}), 403
 
     applications = Application.query.filter_by(drive_id=drive_id).all()
 
@@ -141,7 +169,7 @@ def view_applicants(drive_id):
 @jwt_required()
 def update_application(app_id):
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     company = verify_company(user_id)
 

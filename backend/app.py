@@ -4,6 +4,7 @@ from models import db
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+import os
 
 from extensions import cache
 
@@ -22,6 +23,17 @@ from routes.admin_routes import admin_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+print("DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
+print("INSTANCE PATH:", app.instance_path)
+
+db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+
+if db_uri.startswith("sqlite:///"):
+    db_path = db_uri.replace("sqlite:///", "")
+    print("ACTIVE SQLITE DB FILE:", os.path.abspath(db_path))
+else:
+    print("ACTIVE DATABASE IS NOT SQLITE")
 
 CORS(app)
 
