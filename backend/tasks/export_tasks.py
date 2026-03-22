@@ -34,12 +34,11 @@ def export_student_applications(student_id):
         for app in applications:
 
             drive = db.session.get(Drive, app.drive_id)
-            company = db.session.get(Company, drive.company_id)
-
+            company = db.session.get(Company, drive.company_id) if drive else None
             writer.writerow([
-                student.name,
-                company.company_name,
-                drive.job_title,
+                student.name if student else "",
+                company.company_name if company else "",
+                drive.job_title if drive else "",
                 app.status
             ])
 

@@ -9,8 +9,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 auth_bp = Blueprint("auth", __name__)
 
-
-
 @auth_bp.route("/register/student", methods=["POST"])
 def register_student():
 
@@ -20,6 +18,9 @@ def register_student():
     password = data.get("password")
     name = data.get("name")
     email = data.get("email")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password required"}), 400
 
     existing_user = User.query.filter_by(username=username).first()
 
@@ -57,6 +58,9 @@ def register_company():
     company_name = data.get("company_name")
     website = data.get("website")
 
+    if not username or not password:
+        return jsonify({"message": "Username and password required"}), 400
+
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
@@ -88,8 +92,11 @@ def login():
 
     data = request.get_json()
 
-    username = data.get("email")
+    username = data.get("username")
     password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password required"}), 400
 
     user = User.query.filter_by(username=username).first()
 

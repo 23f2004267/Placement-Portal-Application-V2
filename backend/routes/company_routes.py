@@ -6,6 +6,7 @@ from models.company import Company
 from models.drive import Drive
 from models.application import Application
 from models.student import Student
+from models.placement import Placement
 from models import db
 
 
@@ -207,3 +208,46 @@ def update_application(app_id):
     db.session.commit()
 
     return jsonify({"message": "Application status updated"})
+
+
+@company_bp.route("/company/mark_placed/<int:app_id>", methods=["POST"])
+@jwt_required()
+def mark_placed(app_id):
+
+    user_id = int(get_jwt_identity())
+
+    company = verify_company(user_id)
+
+    if not company:
+        return jsonify({"message": "Access denied"}), 403
+
+    application = db.session.get(Application, app_id)
+
+    if not application:
+        return jsonify({"message": "Application not found"}), 404
+
+    drive = db.session.get(Drive, application.drive_id)
+
+    if drive.company_id != company.id:
+        return jsonify({"message": "Unauthorized action"}), 403
+
+    existing = Placement.query.filter_by(student_id=application.student_id).first()
+    if existing:
+        return jsonify({"message": "Student already placed"}), 400
+
+    if application.status == "Placed":
+        return jsonify({"message": "Already placed"}), 400
+
+    application.status = "Placed"
+
+    placement = Placement(
+        student_id=application.student_id,
+        company_id=company.id,
+        position=drive.job_title,
+        salary=drive.salary
+    )
+
+    db.session.add(placement)
+    db.session.commit()
+
+    return jsonify({"message": "Student marked as placed"})

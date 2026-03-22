@@ -10,3 +10,4 @@ class Drive(db.Model):
     application_deadline=db.Column(db.Date)
     status=db.Column(db.String(20),default="Pending")
 
+    company = db.relationship('Company', backref='drives')

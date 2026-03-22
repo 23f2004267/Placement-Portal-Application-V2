@@ -6,8 +6,9 @@ from models.student import Student
 from models.drive import Drive
 from models.application import Application
 from models.company import Company
+from models.placement import Placement
 from models import db
-from extensions import cache
+from datetime import date
 
 
 student_bp = Blueprint("student", __name__)
@@ -62,12 +63,9 @@ def view_drives():
 
     drives = Drive.query.filter_by(status="Approved").all()
 
-    print("Approved drives count:", len(drives))
-
     result = []
 
     for d in drives:
-
         company = db.session.get(Company, d.company_id)
 
         if company:
@@ -77,8 +75,6 @@ def view_drives():
                 "job_title": d.job_title,
                 "salary": d.salary
             })
-
-    print("Drives result:", result)
 
     return jsonify(result)
 
@@ -104,7 +100,6 @@ def search_drives():
     result = []
 
     for d in drives:
-
         company = db.session.get(Company, d.company_id)
 
         if company:
@@ -171,7 +166,14 @@ def apply_drive(drive_id):
 
     if drive.status != "Approved":
         return jsonify({"message": "Drive not available for application"}), 400
-    
+
+    if drive.application_deadline and drive.application_deadline < date.today():
+        return jsonify({"message": "Application deadline passed"}), 400
+
+    existing = Placement.query.filter_by(student_id=student.id).first()
+    if existing:
+        return jsonify({"message": "Already placed, cannot apply"}), 400
+
     existing_application = Application.query.filter_by(
         student_id=student.id,
         drive_id=drive_id
@@ -212,10 +214,18 @@ def my_applications():
         drive = db.session.get(Drive, a.drive_id)
 
         if drive:
+            company = db.session.get(Company, drive.company_id)
+
+            company_name = ""
+            if company:
+                company_name = company.company_name
+
             result.append({
                 "application_id": a.id,
+                "company_name": company_name,
                 "job_title": drive.job_title,
-                "status": a.status
+                "status": a.status,
+                "applied_on": str(a.application_date)
             })
 
     return jsonify(result)
