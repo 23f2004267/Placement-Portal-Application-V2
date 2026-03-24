@@ -100,7 +100,9 @@ def remove_company(company_id):
     if not company:
         return jsonify({"message": "Company not found"}), 404
 
-    db.session.delete(company)
+    user = db.session.get(User, company.user_id)
+    if user:
+        user.is_active = False
     db.session.commit()
 
     return jsonify({"message": "Company removed"})
@@ -133,6 +135,31 @@ def search_company():
 
     return jsonify(result)
 
+@admin_bp.route("/admin/students", methods=["GET"])
+@jwt_required()
+def view_students():
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    students = Student.query.all()
+
+    result = []
+
+    for s in students:
+        user = db.session.get(User, s.user_id)
+
+        result.append({
+            "id": s.id,
+            "name": s.name,
+            "email": s.email,
+            "user_id": s.user_id,
+            "is_active": user.is_active if user else True
+        })
+
+    return jsonify(result)
 
 @admin_bp.route("/admin/search_student", methods=["GET"])
 @jwt_required()
@@ -206,6 +233,98 @@ def view_placements():
             "company_name": company.company_name if company else "",
             "position": p.position,
             "salary": p.salary
+        })
+
+    return jsonify(result)
+
+@admin_bp.route("/admin/drives", methods=["GET"])
+@jwt_required()
+def view_drives():
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    drives = Drive.query.all()
+
+    result = []
+
+    for d in drives:
+        company = db.session.get(Company, d.company_id)
+
+        result.append({
+            "id": d.id,
+            "company_name": company.company_name if company else "",
+            "job_title": d.job_title,
+            "salary": d.salary,
+            "status": d.status
+        })
+
+    return jsonify(result)
+
+@admin_bp.route("/admin/approve_drive/<int:drive_id>", methods=["PUT"])
+@jwt_required()
+def approve_drive(drive_id):
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
+    drive.status = "Approved"
+    db.session.commit()
+
+    return jsonify({"message": "Drive approved"})
+
+@admin_bp.route("/admin/remove_drive/<int:drive_id>", methods=["DELETE"])
+@jwt_required()
+def remove_drive(drive_id):
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
+    db.session.delete(drive)
+    db.session.commit()
+
+    return jsonify({"message": "Drive removed"})
+
+@admin_bp.route("/admin/applications", methods=["GET"])
+@jwt_required()
+def view_all_applications():
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    applications = Application.query.all()
+
+    result = []
+
+    for app in applications:
+        student = db.session.get(Student, app.student_id)
+        drive = db.session.get(Drive, app.drive_id)
+        company = db.session.get(Company, drive.company_id) if drive else None
+
+        result.append({
+            "application_id": app.id,
+            "student_name": student.name if student else "",
+            "company_name": company.company_name if company else "",
+            "job_title": drive.job_title if drive else "",
+            "status": app.status
         })
 
     return jsonify(result)
