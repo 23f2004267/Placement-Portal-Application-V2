@@ -25,7 +25,25 @@ def register_student():
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
-        return jsonify({"message": "Username already exists"}), 400
+        if existing_user.is_active:
+            return jsonify({"message": "Username already exists"}), 400
+        else:
+            existing_user.password = generate_password_hash(password)
+            existing_user.role = "company"
+            existing_user.is_active = True
+
+            db.session.commit()
+
+            company_profile = Company(
+                user_id=existing_user.id,
+                company_name=company_name,
+                website=website
+            )
+
+            db.session.add(company_profile)
+            db.session.commit()
+
+            return jsonify({"message": "Company re-registered successfully"})    
 
     new_user = User(
         username=username,
@@ -103,7 +121,7 @@ def login():
     if user is None:
         return jsonify({"message": "User not found"}), 404
 
-    if user.is_active == False:
+    if user.is_active is False:
         return jsonify({"message": "Your account is blacklisted"}), 403
 
     if not check_password_hash(user.password, password):

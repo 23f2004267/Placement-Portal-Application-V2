@@ -7,6 +7,7 @@ from models.drive import Drive
 from models.application import Application
 from models.placement import Placement
 from models import db
+from extensions import cache
 
 
 admin_bp = Blueprint("admin", __name__)
@@ -21,6 +22,7 @@ def verify_admin(user_id):
 
 
 @admin_bp.route("/admin/dashboard", methods=["GET"])
+@cache.cached(timeout=60)
 @jwt_required()
 def admin_dashboard():
 
@@ -51,7 +53,25 @@ def view_companies():
     if not verify_admin(user_id):
         return jsonify({"message": "Access denied"}), 403
 
-    companies = Company.query.all()
+    companies = Company.query.filter_by().all()
+
+    result = []
+
+    for c in companies:
+        user = db.session.get(User, c.user_id)
+
+        if user and user.is_active == False:
+            continue
+
+        result.append({
+            "id": c.id,
+            "company_name": c.company_name,
+            "website": c.website,
+            "status": c.approval_status,
+            "user_id": c.user_id
+        })
+
+    return jsonify(result)
 
     result = []
 
@@ -60,7 +80,8 @@ def view_companies():
             "id": c.id,
             "company_name": c.company_name,
             "website": c.website,
-            "status": c.approval_status
+            "status": c.approval_status,
+            "user_id": c.user_id 
         })
 
     return jsonify(result)
@@ -101,11 +122,13 @@ def remove_company(company_id):
         return jsonify({"message": "Company not found"}), 404
 
     user = db.session.get(User, company.user_id)
+
     if user:
         user.is_active = False
+
     db.session.commit()
 
-    return jsonify({"message": "Company removed"})
+    return jsonify({"message": "Company removed (blacklisted)"})
 
 
 @admin_bp.route("/admin/search_company", methods=["GET"])
@@ -151,12 +174,16 @@ def view_students():
     for s in students:
         user = db.session.get(User, s.user_id)
 
+        if user and user.is_active == False:
+            continue
+
         result.append({
             "id": s.id,
             "name": s.name,
             "email": s.email,
             "user_id": s.user_id,
-            "is_active": user.is_active if user else True
+            "is_active": user.is_active if user else True,
+            "resume": s.resume
         })
 
     return jsonify(result)
@@ -300,6 +327,25 @@ def remove_drive(drive_id):
     db.session.commit()
 
     return jsonify({"message": "Drive removed"})
+    
+@admin_bp.route("/admin/complete_drive/<int:drive_id>", methods=["PUT"])
+@jwt_required()
+def complete_drive(drive_id):
+
+    user_id = int(get_jwt_identity())
+
+    if not verify_admin(user_id):
+        return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
+    drive.status = "Completed"
+    db.session.commit()
+
+    return jsonify({"message": "Drive marked as completed"})
 
 @admin_bp.route("/admin/applications", methods=["GET"])
 @jwt_required()
@@ -322,6 +368,8 @@ def view_all_applications():
         result.append({
             "application_id": app.id,
             "student_name": student.name if student else "",
+            "branch": student.branch if student else "",
+            "resume": student.resume if student else "",
             "company_name": company.company_name if company else "",
             "job_title": drive.job_title if drive else "",
             "status": app.status

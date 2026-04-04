@@ -190,6 +190,7 @@ def update_application(app_id):
     data = request.get_json()
 
     new_status = data.get("status")
+    interview_date = data.get("interview_date")
 
     valid_status = [
         "Applied",
@@ -204,6 +205,8 @@ def update_application(app_id):
         return jsonify({"message": "Invalid status"}), 400
 
     application.status = new_status
+    if interview_date:
+        application.interview_date = interview_date
 
     db.session.commit()
 

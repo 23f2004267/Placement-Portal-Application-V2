@@ -9,6 +9,7 @@ from models.company import Company
 from models.placement import Placement
 from models import db
 from datetime import date
+import os
 
 
 student_bp = Blueprint("student", __name__)
@@ -46,7 +47,8 @@ def student_dashboard():
 
     return jsonify({
         "student_name": student.name,
-        "applications": total_applications
+        "applications": total_applications,
+        "resume": student.resume if student.resume else ""
     })
 
 
@@ -119,17 +121,24 @@ def drive_details(drive_id):
 
     user_id = int(get_jwt_identity())
 
-    student = verify_student(user_id)
+    user = db.session.get(User, user_id)
 
-    if not student:
+    if not user:
         return jsonify({"message": "Access denied"}), 403
+
+    student = None
+
+    if user.role == "student":
+        student = verify_student(user_id)
+        if not student:
+            return jsonify({"message": "Access denied"}), 403
 
     drive = db.session.get(Drive, drive_id)
 
     if not drive:
         return jsonify({"message": "Drive not found"}), 404
 
-    if drive.status != "Approved":
+    if user.role == "student" and drive.status not in ["Approved", "Completed"]:
         return jsonify({"message": "Drive not available"}), 400
 
     company = db.session.get(Company, drive.company_id)
@@ -173,6 +182,15 @@ def apply_drive(drive_id):
     existing = Placement.query.filter_by(student_id=student.id).first()
     if existing:
         return jsonify({"message": "Already placed, cannot apply"}), 400
+    
+
+    placed = Application.query.filter_by(
+        student_id=student.id,
+        status="Placed"
+    ).first()
+
+    if placed:
+        return jsonify({"message": "Already placed. Cannot apply"}), 400
 
     existing_application = Application.query.filter_by(
         student_id=student.id,
@@ -192,6 +210,41 @@ def apply_drive(drive_id):
     db.session.commit()
 
     return jsonify({"message": "Application submitted"})
+
+
+@student_bp.route("/student/upload_resume", methods=["POST"])
+@jwt_required()
+def upload_resume():
+
+    user_id = int(get_jwt_identity())
+    student = verify_student(user_id)
+
+    if not student:
+        return jsonify({"message": "Access denied"}), 403
+
+    if "file" not in request.files:
+        return jsonify({"message": "No file uploaded"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return jsonify({"message": "Empty file"}), 400
+
+    original_name = file.filename
+    filename = f"{student.id}_{original_name}"
+
+    upload_folder = os.path.join(os.getcwd(), "uploads")
+
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+
+    filepath = os.path.join(upload_folder, filename)
+
+    file.save(filepath)
+
+    student.resume = filename   
+    db.session.commit()
+    return jsonify({"message": "Resume uploaded successfully"})
 
 
 @student_bp.route("/student/my_applications", methods=["GET"])
@@ -225,7 +278,8 @@ def my_applications():
                 "company_name": company_name,
                 "job_title": drive.job_title,
                 "status": a.status,
-                "applied_on": str(a.application_date)
+                "applied_on": str(a.application_date),
+                "interview_date": str(a.interview_date) if a.interview_date else ""
             })
 
     return jsonify(result)

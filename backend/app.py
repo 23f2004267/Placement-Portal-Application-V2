@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
+from flask import send_from_directory
 
 from extensions import cache
 
@@ -48,6 +49,13 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(student_bp)
 app.register_blueprint(company_bp)
 app.register_blueprint(admin_bp)
+
+from flask import send_from_directory
+
+@app.route("/uploads/<filename>")
+def get_file(filename):
+    upload_folder = os.path.join(os.getcwd(), "uploads")
+    return send_from_directory(upload_folder, filename)
 
 
 @app.route("/")
