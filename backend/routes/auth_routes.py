@@ -29,21 +29,12 @@ def register_student():
             return jsonify({"message": "Username already exists"}), 400
         else:
             existing_user.password = generate_password_hash(password)
-            existing_user.role = "company"
+            existing_user.role = "student" 
             existing_user.is_active = True
 
             db.session.commit()
 
-            company_profile = Company(
-                user_id=existing_user.id,
-                company_name=company_name,
-                website=website
-            )
-
-            db.session.add(company_profile)
-            db.session.commit()
-
-            return jsonify({"message": "Company re-registered successfully"})    
+            return jsonify({"message": "Student re-registered successfully"})  
 
     new_user = User(
         username=username,
