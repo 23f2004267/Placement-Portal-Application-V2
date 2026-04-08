@@ -4,7 +4,7 @@
         <h2>Login</h2>
 
         <form @submit.prevent="loginUser">
-            <input type="text" v-model="email" placeholder="Username" />
+            <input type="text" v-model="username" placeholder="Username" />
             <input type="password" v-model="password" placeholder="Password" />
 
             <button type="submit">Login</button>
@@ -29,7 +29,7 @@ import API from "../api/api"
 export default {
     data() {
         return {
-            email: "",
+            username: "",
             password: "",
             message: ""
         }
@@ -38,8 +38,10 @@ export default {
     methods: {
         async loginUser() {
             try {
+                this.message = ""
+
                 const res = await API.post("/login", {
-                    email: this.email,
+                    username: this.username,
                     password: this.password
                 })
 
@@ -47,6 +49,7 @@ export default {
                 const role = res.data.role
 
                 localStorage.setItem("token", token)
+                localStorage.setItem("role", role)
 
                 if (role === "student") {
                     this.$router.push("/student")

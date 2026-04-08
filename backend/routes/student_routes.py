@@ -71,11 +71,18 @@ def view_drives():
         company = db.session.get(Company, d.company_id)
 
         if company:
+            application = Application.query.filter_by(
+                student_id=student.id,
+                drive_id=d.id
+            ).first()
+
             result.append({
                 "drive_id": d.id,
                 "company_name": company.company_name,
                 "job_title": d.job_title,
-                "salary": d.salary
+                "salary": d.salary,
+                "drive_status": d.status,
+                "application_status": application.status if application else "Not Applied"
             })
 
     return jsonify(result)
@@ -147,13 +154,23 @@ def drive_details(drive_id):
     if company:
         company_name = company.company_name
 
+    application = None
+
+    if user.role == "student":
+        application = Application.query.filter_by(
+            student_id=student.id,
+            drive_id=drive.id
+        ).first()
+
     return jsonify({
         "drive_id": drive.id,
         "company_name": company_name,
         "job_title": drive.job_title,
         "job_description": drive.job_description,
         "salary": drive.salary,
-        "status": drive.status
+        "status": drive.status,
+        "application_status": application.status if application else "Not Applied",
+        "interview_date": str(application.interview_date) if application and application.interview_date else ""
     })
 
 
@@ -283,3 +300,21 @@ def my_applications():
             })
 
     return jsonify(result)
+
+@student_bp.route("/student/export_applications", methods=["POST"])
+@jwt_required()
+def export_applications():
+
+    user_id = int(get_jwt_identity())
+
+    student = verify_student(user_id)
+
+    if not student:
+        return jsonify({"message": "Access denied"}), 403
+    
+    print("EXPORT API HIT")
+    print("SENDING TASK TO CELERY")
+
+    from tasks.export_tasks import export_student_applications
+    export_student_applications.delay(student.id)
+    return jsonify({"message": "Export started. File will be generated soon."})

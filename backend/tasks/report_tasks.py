@@ -12,8 +12,8 @@ def generate_monthly_report():
 
     total_applications = Application.query.count()
 
-    selected_students = Application.query.filter_by(
-        status="Placed"
+    selected_students = Application.query.filter(
+        Application.status.in_(["Offer", "Placed"])
     ).count()
 
     filename = "placement_report.txt"

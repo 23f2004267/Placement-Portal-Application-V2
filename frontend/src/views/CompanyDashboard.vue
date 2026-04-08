@@ -22,32 +22,64 @@
         <button @click="createDrive">Create</button>
     </div>
 
-    <h3>My Drives</h3>
+    <h3>Ongoing Drives</h3>
 
-    <div v-if="drives.length === 0">
-        No drives created
+    <div v-if="ongoingDrives.length === 0">
+        No upcoming drives
     </div>
 
-    <div v-for="drive in drives" :key="drive.id" class="drive-card">
+    <div v-for="drive in ongoingDrives" :key="drive.id" class="drive-card">
         <p><b>Title:</b> {{ drive.job_title }}</p>
         <p><b>Salary:</b> {{ drive.salary }}</p>
-        <p><b>Status:</b> {{ drive.status }}</p>
+
+        <button v-if="selectedDrive !== drive.id" @click="viewApplicants(drive.id)">
+            View Applicants
+        </button>
+
+        <button v-else @click="closeApplicants">
+            Close Applicants
+        </button>
+
+        <button @click="markComplete(drive.id)">
+            Mark as Complete
+        </button>
+    </div>
+
+
+    <h3>Completed Drives</h3>
+
+    <div v-if="completedDrives.length === 0">
+        No closed drives
+    </div>
+
+    <div v-for="drive in completedDrives" :key="drive.id" class="drive-card">
+        <p><b>Title:</b> {{ drive.job_title }}</p>
 
         <button @click="viewApplicants(drive.id)">
             View Applicants
         </button>
     </div>
 
-    <div v-if="selectedDrive">
-        <h3>Applicants</h3>
+    <div v-if="drives.length === 0">
+        No drives created
+    </div>
+
+    <div v-if="selectedDrive !== null">
+        <h3>Applicants for Drive {{ selectedDrive }}</h3>
 
         <div v-if="applicants.length === 0">
             No applicants
         </div>
 
         <div v-for="app in applicants" :key="app.application_id" class="app-card">
+            <button v-if="app.resume" @click="viewResume(app.resume)">
+                View Resume
+            </button>
             <p><b>Name:</b> {{ app.student_name }}</p>
             <p><b>Status:</b> {{ app.status }}</p>
+            <p v-if="app.interview_date">
+                <b>Interview:</b> {{ app.interview_date }}
+            </p>
 
             <select v-model="app.newStatus">
                 <option>Applied</option>
@@ -55,7 +87,12 @@
                 <option>Interview</option>
                 <option>Offer</option>
                 <option>Rejected</option>
+                <option>Placed</option>
             </select>
+
+            <div v-if="app.newStatus === 'Interview'">
+                <input type="datetime-local" v-model="app.interview_date" />
+            </div>
 
             <button @click="updateStatus(app)">
                 Update
@@ -82,6 +119,8 @@ export default {
             companyName: "",
             totalDrives: 0,
             drives: [],
+            ongoingDrives: [],
+            completedDrives: [],
             applicants: [],
             selectedDrive: null,
             message: "",
@@ -94,18 +133,31 @@ export default {
 
     methods: {
         async fetchDashboard() {
-            const res = await API.get("/company/dashboard")
-            this.companyName = res.data.company_name
-            this.totalDrives = res.data.total_drives
+            try {
+                const res = await API.get("/company/dashboard")
+                this.companyName = res.data.company_name
+                this.totalDrives = res.data.total_drives
+            } catch (err) {
+                this.message = "Failed to load dashboard"
+            }
         },
 
         async fetchDrives() {
-            const res = await API.get("/company/my_drives")
-            this.drives = res.data
+            try {
+                const res = await API.get("/company/my_drives")
+                this.drives = res.data
+
+                this.ongoingDrives = this.drives.filter(d => d.status !== "Completed")
+                this.completedDrives = this.drives.filter(d => d.status === "Completed")
+            } catch (err) {
+                this.message = "Failed to load drives"
+            }
         },
 
         async createDrive() {
             try {
+                this.message = ""
+
                 const res = await API.post("/company/create_drive", {
                     job_title: this.job_title,
                     job_description: this.job_description,
@@ -128,22 +180,65 @@ export default {
 
         async viewApplicants(driveId) {
             this.selectedDrive = driveId
+            this.applicants = []
+            this.message = ""
+            const selected = this.drives.find(d => d.id === driveId)
 
-            const res = await API.get("/company/applicants/" + driveId)
+            if(selected && selected.status === "Completed"){
+                this.message = "Viewing past applicants"
+            }
 
-            this.applicants = res.data.map(a => ({
-                ...a,
-                newStatus: a.status
-            }))
+            try {
+                const res = await API.get("/company/applicants/" + driveId)
+
+                this.applicants = res.data.map(a => ({
+                    application_id: a.application_id,
+                    student_name: a.student_name,
+                    status: a.status,
+                    newStatus: a.status,
+                    resume: a.resume,
+                    interview_date: a.interview_date || ""
+                }))
+
+            } catch (err) {
+                this.message = "Failed to load applicants"
+            }
+        },
+
+        viewResume(path){
+            if(!path){
+                alert("No resume available")
+                return
+            }
+
+            const filename = path.split("/").pop()
+            window.open("http://127.0.0.1:5000/uploads/" + filename)
+        },
+        
+
+        closeApplicants(){
+            this.selectedDrive = null
+            this.applicants = []
         },
 
         async updateStatus(app) {
             try {
-                const res = await API.put("/company/update_application/" + app.application_id, {
-                    status: app.newStatus
-                })
+                this.message = ""
 
-                this.message = res.data.message
+                let payload = {
+                    status: app.newStatus
+                }
+
+                if(app.newStatus === "Interview"){
+                    if(!app.interview_date){
+                        alert("Please select interview date and time")
+                        return
+                    }
+                    payload.interview_date = app.interview_date
+                }
+
+                await API.put("/company/update_application/" + app.application_id, payload)
+
                 this.viewApplicants(this.selectedDrive)
 
             } catch (err) {
@@ -153,6 +248,8 @@ export default {
 
         async markPlaced(appId) {
             try {
+                this.message = ""
+
                 const res = await API.post("/company/mark_placed/" + appId)
 
                 this.message = res.data.message
@@ -163,8 +260,28 @@ export default {
             }
         },
 
+        async markComplete(id){
+            try{
+                this.message = ""
+
+                const res = await API.put("/admin/complete_drive/" + id)
+
+                this.message = res.data.message
+
+                this.fetchDrives()
+
+                if(this.selectedDrive === id){
+                    this.closeApplicants()
+                }
+
+            }catch(err){
+                this.message = "Failed to mark complete"
+            }
+        },
+
         logout() {
             localStorage.removeItem("token")
+            localStorage.removeItem("role")
             this.$router.push("/")
         }
     },

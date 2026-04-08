@@ -160,7 +160,9 @@ def view_applicants(drive_id):
         result.append({
             "application_id": app.id,
             "student_name": student.name,
-            "status": app.status
+            "status": app.status,
+            "resume": student.resume if student else "",
+            "interview_date": str(app.interview_date) if app.interview_date else ""
         })
 
     return jsonify(result)
@@ -205,8 +207,14 @@ def update_application(app_id):
         return jsonify({"message": "Invalid status"}), 400
 
     application.status = new_status
-    if interview_date:
-        application.interview_date = interview_date
+
+    if new_status == "Interview" and interview_date:
+        from datetime import datetime
+        try:
+            interview_date = interview_date.replace("T", " ")
+            application.interview_date = datetime.strptime(interview_date, "%Y-%m-%d %H:%M")
+        except:
+            return jsonify({"message": "Invalid datetime format"}), 400
 
     db.session.commit()
 

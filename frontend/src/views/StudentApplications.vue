@@ -4,6 +4,8 @@
     <div class="top-bar">
         <h2>Student Application History</h2>
         <button @click="goBack">Back</button>
+        <button @click="logout">Logout</button>  
+        <button @click="exportCSV">Export CSV</button>   
     </div>
 
     <div class="info-box">
@@ -20,7 +22,9 @@
                     <th>Company</th>
                     <th>Job Title</th>
                     <th>Status</th>
+                    <th>Interview</th>
                     <th>Applied On</th>
+
                 </tr>
             </thead>
 
@@ -30,6 +34,7 @@
                     <td>{{ app.company_name }}</td>
                     <td>{{ app.job_title }}</td>
                     <td>{{ app.status }}</td>
+                    <td>{{ app.interview_date ? formatDate(app.interview_date) : "-" }}</td>
                     <td>{{ formatDate(app.applied_on) }}</td>
                 </tr>
             </tbody>
@@ -66,11 +71,21 @@ export default {
         },
 
         async fetchApplications() {
+            this.message = ""
             try {
                 const res = await API.get("/student/my_applications")
                 this.applications = res.data
             } catch (err) {
                 this.message = "Failed to load applications"
+            }
+        },
+
+        async exportCSV(){
+            try{
+                const res = await API.post("/student/export_applications")
+                alert(res.data.message)
+            }catch(err){
+                alert("Export failed")
             }
         },
 
@@ -82,18 +97,22 @@ export default {
 
         goBack() {
             this.$router.push("/student")
+        },
+
+        logout() {
+            localStorage.removeItem("token")
+            localStorage.removeItem("role")
+            this.$router.push("/")
         }
     },
 
     mounted() {
         this.fetchStudentInfo()
         this.fetchApplications()
-    }
-}
-</script>
 
-<style>
-.applications-page {
-    padding: 20px;
-}
-</style>
+        setInterval(() => {
+            this.fetchApplications()
+        }, 5000)
+    }
+    }
+</script>

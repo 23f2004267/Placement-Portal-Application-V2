@@ -372,7 +372,8 @@ def view_all_applications():
             "resume": student.resume if student else "",
             "company_name": company.company_name if company else "",
             "job_title": drive.job_title if drive else "",
-            "status": app.status
+            "status": app.status,
+            "interview_date": str(app.interview_date) if app.interview_date else ""
         })
 
     return jsonify(result)

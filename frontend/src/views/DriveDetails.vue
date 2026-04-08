@@ -12,11 +12,22 @@
     <div v-if="drive" class="details-box">
         <p><b>Company:</b> {{ drive.company_name }}</p>
         <p><b>Job Title:</b> {{ drive.job_title }}</p>
-        <p><b>Salary:</b> {{ drive.salary }}</p>
         <p><b>Description:</b> {{ drive.job_description }}</p>
+        <p><b>Salary:</b> {{ drive.salary }}</p>
         <p><b>Status:</b> {{ drive.status }}</p>
+        <p>
+            <b>Application Status:</b>
+            {{ drive.application_status }}
+        </p>
 
-        <button @click="applyDrive">Apply</button>
+        <p v-if="drive.interview_date">
+            <b>Interview Date:</b>
+            {{ drive.interview_date }}
+        </p>
+
+        <button v-if="isStudent" @click="applyDrive">
+            Apply
+        </button>
     </div>
 
     <div v-else class="details-box">
@@ -35,7 +46,8 @@ export default {
     data() {
         return {
             drive: null,
-            message: ""
+            message: "",
+            isStudent: false,
         }
     },
 
@@ -66,7 +78,7 @@ export default {
             }
 
             try {
-                const res = await API.post("/student/apply/" + this.drive.drive_id)
+                const res = await API.post("/student/apply/" + (this.drive.drive_id || this.drive.id))
                 this.message = res.data.message
             } catch (err) {
                 if (err.response && err.response.data && err.response.data.message) {
@@ -78,17 +90,25 @@ export default {
         },
 
         goBack() {
-            this.$router.push("/student")
+            const role = localStorage.getItem("role")
+
+            if (role === "admin") {
+                this.$router.push("/admin")
+            } else {
+                this.$router.push("/student")
+            }
         },
 
         logout() {
             localStorage.removeItem("token")
+            localStorage.removeItem("role")
             this.$router.push("/")
         }
     },
 
     mounted() {
         this.fetchDrive()
+        this.isStudent = localStorage.getItem("role") === "student"
     }
 }
 </script>

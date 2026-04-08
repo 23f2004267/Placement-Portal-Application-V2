@@ -8,6 +8,7 @@ import CompanyDashboard from "../views/CompanyDashboard.vue"
 import AdminDashboard from "../views/AdminDashboard.vue"
 import DriveDetails from "../views/DriveDetails.vue"
 import StudentApplications from "../views/StudentApplications.vue"
+import ApplicationDetails from "../views/ApplicationDetails.vue"
 
 
 const routes = [
@@ -19,7 +20,8 @@ const routes = [
     { path: "/student/applications", component: StudentApplications, meta: { requiresAuth: true } },
     { path: "/company", component: CompanyDashboard, meta: { requiresAuth: true } },
     { path: "/admin", component: AdminDashboard, meta: { requiresAuth: true } },
-    { path: "/drive/:id", component: DriveDetails, meta: { requiresAuth: true } }
+    { path: "/drive/:id", component: DriveDetails, meta: { requiresAuth: true } },
+    { path: "/application/:id", component: ApplicationDetails, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

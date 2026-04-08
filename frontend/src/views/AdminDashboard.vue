@@ -36,7 +36,7 @@
             No companies found
         </div>
 
-        <div v-for="company in companies" :key="company.id" class="item-card">
+        <div v-for="company in companies.filter(c => c.status !== 'Blacklisted')" :key="company.id" class="item-card">
             <div>
                 <p><b>Company:</b> {{ company.company_name }}</p>
                 <p><b>Website:</b> {{ company.website }}</p>
@@ -51,32 +51,9 @@
                     Approve
                 </button>
 
-                <button class="danger-btn" @click="removeCompany(company.id)">
-                    Remove
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="section-box">
-        <h3>Registered Students</h3>
-
-        <div v-if="students.length === 0">
-            No students found
-        </div>
-
-        <div v-for="student in students" :key="student.id" class="item-card">
-            <div>
-                <p><b>Name:</b> {{ student.name }}</p>
-                <p><b>Email:</b> {{ student.email }}</p>
-                <p><b>Active:</b> {{ student.is_active ? "Yes" : "No" }}</p>
-            </div>
-
-            <div class="action-buttons">
                 <button
-                    v-if="student.is_active"
                     class="danger-btn"
-                    @click="blacklistUser(student.user_id)"
+                    @click="blacklistUser(company.user_id)"
                 >
                     Blacklist
                 </button>
@@ -85,9 +62,50 @@
     </div>
 
     <div class="section-box">
+        <h3>Registered Students</h3>
+
+        <table v-if="students.length > 0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr v-for="student in students" :key="student.id">
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>
+                        <button v-if="student.resume" @click="viewResume(student.resume)">
+                            View Resume
+                        </button>
+                    </td>
+                    <td>{{ student.is_active ? "Active" : "Blocked" }}</td>
+                    <td>
+                        <button
+                            v-if="student.is_active"
+                            class="danger-btn"
+                            @click="blacklistUser(student.user_id)"
+                        >
+                            Blacklist
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div v-else>
+            No students found
+        </div>
+    </div>
+
+    <div class="section-box">
         <h3>Ongoing Drives</h3>
 
-        <div v-if="drives.length === 0">
+        <div v-if="!drives || drives.length === 0">
             No drives found
         </div>
 
@@ -100,17 +118,27 @@
             </div>
 
             <div class="action-buttons">
-                <button
-                    v-if="drive.status !== 'Approved'"
-                    @click="approveDrive(drive.id)"
-                >
-                    Approve Drive
+
+                <button @click="viewDrive(drive.id)">
+                    View Details
                 </button>
+
+                <button v-if="drive.status === 'Pending'" @click="approveDrive(drive.id)">
+                    Approve
+                </button>
+
+                <button class="danger-btn" @click="removeDrive(drive.id)">
+                    Remove
+                </button>
+
+                <button @click="markComplete(drive.id)">
+                    Mark Complete
+                </button>
+
             </div>
         </div>
     </div>
 
-    <!-- ✅ NEW SECTION (ADDED ONLY, NOTHING REMOVED) -->
     <div class="section-box">
         <h3>Placement Report</h3>
 
@@ -124,6 +152,27 @@
                 <p><b>Company:</b> {{ p.company_name }}</p>
                 <p><b>Position:</b> {{ p.position }}</p>
                 <p><b>Salary:</b> {{ p.salary }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="section-box">
+        <h3>All Applications</h3>
+
+        <div v-if="!applications || applications.length === 0">
+        No applications found
+        </div>
+
+        <div v-for="app in applications" :key="app.application_id" class="item-card">
+            <div class="action-buttons">
+                <button @click="viewApplication(app.application_id)">
+                    View
+                </button>
+            </div>
+            <div>
+                <p><b>Student:</b> {{ app.student_name }}</p>
+                <p><b>Company:</b> {{ app.company_name }}</p>
+                <p><b>Job:</b> {{ app.job_title }}</p>
+                <p><b>Status:</b> {{ app.status }}</p>
             </div>
         </div>
     </div>
@@ -146,7 +195,8 @@ export default {
             companies: [],
             students: [],
             drives: [],
-            placements: [],  
+            placements: [], 
+            applications: [], 
             searchText: "",
             message: ""
         }
@@ -168,24 +218,6 @@ export default {
                 this.companies = res.data
             } catch (err) {
                 console.log("Companies error:", err)
-            }
-        },
-
-        async fetchStudents() {
-            try {
-                const res = await API.get("/admin/students")
-                this.students = res.data
-            } catch (err) {
-                console.log("Students error:", err)
-            }
-        },
-
-        async fetchDrives() {
-            try {
-                const res = await API.get("/admin/drives")
-                this.drives = res.data
-            } catch (err) {
-                console.log("Drives error:", err)
             }
         },
 
@@ -215,18 +247,45 @@ export default {
                 this.message = res.data.message
                 this.fetchCompanies()
                 this.fetchSummary()
-                this.fetchDrives()
             } catch (err) {
                 this.message = err.response?.data?.message || "Company removal failed"
             }
         },
 
+        async fetchDrives() {
+            try {
+                const res = await API.get("/admin/drives")
+                this.drives = res.data
+            } catch (err) {
+                console.log("Drives error:", err)
+            }
+        },
+
+        async fetchStudents() {
+            try {
+                const res = await API.get("/admin/students")
+                this.students = res.data
+            } catch (err) {
+                console.log("Students error:", err)
+            }
+        },
+
+        viewResume(path){
+            const filename = path.split("/").pop()
+            window.open("http://127.0.0.1:5000/uploads/" + filename)
+        },
+
         async approveDrive(id) {
             try {
+                this.message = ""
+
                 const res = await API.put("/admin/approve_drive/" + id)
+
                 this.message = res.data.message
-                this.fetchDrives()
+
+                this.fetchDrives()      
                 this.fetchSummary()
+
             } catch (err) {
                 this.message = err.response?.data?.message || "Drive approval failed"
             }
@@ -236,9 +295,33 @@ export default {
             try {
                 const res = await API.put("/admin/blacklist_user/" + userId)
                 this.message = res.data.message
+                this.students = this.students.filter(s => s.user_id !== userId)
+
                 this.fetchStudents()
+                this.companies = this.companies.filter(c => c.user_id !== userId)
+
             } catch (err) {
                 this.message = err.response?.data?.message || "Blacklist failed"
+            }
+        },
+        async removeDrive(id) {
+            try {
+                this.message = ""
+                const res = await API.delete("/admin/remove_drive/" + id)
+                this.message = res.data.message
+                this.fetchDrives()
+                this.fetchSummary()
+
+            } catch (err) {
+                this.message = err.response?.data?.message || "Drive removal failed"
+            }
+        },
+        async fetchApplications() {
+            try {
+                const res = await API.get("/admin/applications")
+                this.applications = res.data
+            } catch (err) {
+                console.log("Applications error:", err)
             }
         },
 
@@ -267,11 +350,19 @@ export default {
             }
         },
 
+        async markComplete(id){
+            try{
+                const res = await API.put("/admin/complete_drive/" + id)
+                this.message = res.data.message
+                this.fetchDrives()
+            }catch(err){
+                this.message = "Failed to mark complete"
+            }
+        },
+
         resetData() {
             this.searchText = ""
             this.fetchCompanies()
-            this.fetchStudents()
-            this.fetchDrives()
             this.fetchSummary()
             this.fetchPlacements()   
             this.message = ""
@@ -279,20 +370,31 @@ export default {
 
         logout() {
             localStorage.removeItem("token")
+            localStorage.removeItem("role")
             this.$router.push("/")
-        }
+        },
+
+        viewDrive(id){
+            this.$router.push("/drive/" + id)
+        },
+
+        viewApplication(id){
+            this.$router.push("/application/" + id)
+        },      
+
+        
     },
 
     mounted() {
         this.fetchSummary()
         this.fetchCompanies()
         this.fetchStudents()
-        this.fetchDrives()
-        this.fetchPlacements()  
+        this.fetchPlacements() 
+        this.fetchDrives() 
+        this.fetchApplications()
     }
 }
 </script>
-
 <style>
 .admin-dashboard {
     padding: 20px;

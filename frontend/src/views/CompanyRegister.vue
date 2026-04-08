@@ -79,7 +79,7 @@ export default {
 
 .register-box {
     width: 320px;
-    border: 1px solid black;
+    border: 1px soplid black;
     border-radius: 12px;
     padding: 20px;
 }

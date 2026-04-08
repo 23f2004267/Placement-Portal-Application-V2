@@ -12,10 +12,22 @@
     <div class="summary-box">
         <p><b>Student Name:</b> {{ studentName }}</p>
         <p><b>Total Applications:</b> {{ totalApplications }}</p>
-        <p>{{ message }}</p>
     </div>
 
-    <div class="search-box">
+    <div class="upload-box">
+        <input type="file" @change="handleFile" />
+        <button @click="uploadResume">Upload Resume</button>
+        <p v-if="resumePath" style="color:green;">
+            Resume already uploaded
+        </p>
+
+        <button v-if="resumePath" @click="viewResume">
+            View Resume
+        </button>
+        <p v-if="message">{{ message }}</p>
+    </div>
+
+    <div class="search-box"> 
         <input
             type="text"
             v-model="searchTitle"
@@ -35,15 +47,22 @@
         <p><b>Company:</b> {{ drive.company_name || drive.company }}</p>
         <p><b>Job Title:</b> {{ drive.job_title }}</p>
         <p><b>Salary:</b> {{ drive.salary }}</p>
-
+        <p>
+            <b>Status:</b>
+            {{ drive.application_status }}
+        </p>
         <div class="drive-actions">
             <button @click="viewDetails(drive.drive_id)">
                 View Details
             </button>
 
-            <button @click="applyToDrive(drive.drive_id)">
+            <button v-if="drive.status === 'Approved'" @click="applyToDrive(drive.drive_id)">
                 Apply
             </button>
+
+            <p v-if="drive.status === 'Completed'" style="color:red;">
+                Applications Closed
+            </p>
         </div>
     </div>
 
@@ -60,7 +79,9 @@ export default {
             totalApplications: 0,
             drives: [],
             searchTitle: "",
-            message: ""
+            message: "",
+            resumePath: "",
+            isStudent: false,
         }
     },
 
@@ -70,6 +91,7 @@ export default {
                 const res = await API.get("/student/dashboard")
                 this.studentName = res.data.student_name
                 this.totalApplications = res.data.applications
+                this.resumePath = res.data.resume
             } catch (err) {
                 console.log("Dashboard error:", err)
                 this.message = "Failed to load dashboard"
@@ -86,6 +108,28 @@ export default {
                 this.message = "Failed to load drives"
             }
         },
+
+        handleFile(e){
+            this.resumeFile = e.target.files[0]
+        },
+
+        async uploadResume(){
+            if(!this.resumeFile){
+                this.message = "Select a file first"
+                return
+            }
+
+            const formData = new FormData()
+            formData.append("file", this.resumeFile)
+
+            try{
+                const res = await API.post("/student/upload_resume", formData)
+                this.message = res.data.message
+            }catch(err){
+                this.message = "Upload failed"
+            }
+        },
+
 
         async searchDrives() {
             if (this.searchTitle.trim() === "") {
@@ -136,11 +180,17 @@ export default {
 
         logout() {
             localStorage.removeItem("token")
+            localStorage.removeItem("role")
             this.$router.push("/")
+        },
+        viewResume(){
+            const filename = this.resumePath
+            window.open("http://127.0.0.1:5000/uploads/" + filename)
         }
     },
 
     mounted() {
+        this.isStudent = localStorage.getItem("role") === "student"
         this.fetchDashboard()
         this.fetchDrives()
     }

@@ -24,6 +24,8 @@ from routes.admin_routes import admin_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config["broker_url"] = Config.broker_url
+app.config["result_backend"] = Config.result_backend
 
 print("DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
 print("INSTANCE PATH:", app.instance_path)
@@ -36,7 +38,7 @@ if db_uri.startswith("sqlite:///"):
 else:
     print("ACTIVE DATABASE IS NOT SQLITE")
 
-CORS(app)
+CORS(app, supports_credentials=True)
 
 db.init_app(app)
 
