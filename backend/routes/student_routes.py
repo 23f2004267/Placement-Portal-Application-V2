@@ -43,12 +43,16 @@ def student_dashboard():
     if not student:
         return jsonify({"message": "Access denied"}), 403
 
-    total_applications = Application.query.filter_by(student_id=student.id).count()
+    applications = Application.query.filter_by(student_id=student.id).all()
 
     return jsonify({
         "student_name": student.name,
-        "applications": total_applications,
-        "resume": student.resume if student.resume else ""
+        "phone": student.phone,
+        "branch": student.branch,
+        "cgpa": student.cgpa,
+        "skills": student.skills,
+        "resume": student.resume,
+        "total_applications": len(applications)
     })
 
 
@@ -185,6 +189,13 @@ def apply_drive(drive_id):
     if not student:
         return jsonify({"message": "Access denied"}), 403
 
+    existing = Application.query.filter_by(
+        student_id=student.id,
+        drive_id=drive_id
+    ).first()
+
+    if existing:
+        return jsonify({"message": "Already applied"}), 400
     drive = db.session.get(Drive, drive_id)
 
     if not drive:
@@ -229,9 +240,12 @@ def apply_drive(drive_id):
     return jsonify({"message": "Application submitted"})
 
 
-@student_bp.route("/student/upload_resume", methods=["POST"])
+@student_bp.route("/student/upload_resume", methods=["POST", "OPTIONS"])
 @jwt_required()
 def upload_resume():
+
+    if request.method == "OPTIONS":
+        return jsonify({"message": "OK"}), 200
 
     user_id = int(get_jwt_identity())
     student = verify_student(user_id)
@@ -239,29 +253,69 @@ def upload_resume():
     if not student:
         return jsonify({"message": "Access denied"}), 403
 
-    if "file" not in request.files:
+    file = request.files.get("file")
+
+    if not file:
         return jsonify({"message": "No file uploaded"}), 400
 
-    file = request.files["file"]
+    import os
 
-    if file.filename == "":
-        return jsonify({"message": "Empty file"}), 400
+    upload_folder = "uploads"
+    os.makedirs(upload_folder, exist_ok=True)
 
-    original_name = file.filename
-    filename = f"{student.id}_{original_name}"
+    filename = f"resume_{student.id}.pdf"
+    file_path = os.path.join(upload_folder, filename)
 
-    upload_folder = os.path.join(os.getcwd(), "uploads")
+    file.save(file_path)
 
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
+    student.resume = filename
 
-    filepath = os.path.join(upload_folder, filename)
-
-    file.save(filepath)
-
-    student.resume = filename   
     db.session.commit()
-    return jsonify({"message": "Resume uploaded successfully"})
+
+    return jsonify({
+        "message": "Resume uploaded successfully",
+        "resume": student.resume
+    })
+
+@student_bp.route("/student/update_profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+
+    user_id = int(get_jwt_identity())
+    student = verify_student(user_id)
+
+    if not student:
+        return jsonify({"message": "Access denied"}), 403
+
+    data = request.get_json()
+
+    phone = data.get("phone")
+    branch = data.get("branch")
+    cgpa = data.get("cgpa")
+    skills = data.get("skills")
+
+    if phone and (not phone.isdigit() or len(phone) != 10):
+        return jsonify({"message": "Phone must be 10 digits"}), 400
+
+    if cgpa is not None:
+        try:
+            cgpa = float(cgpa)
+            if cgpa < 0 or cgpa > 10:
+                return jsonify({"message": "CGPA must be between 0 and 10"}), 400
+        except:
+            return jsonify({"message": "Invalid CGPA"}), 400
+    if not branch or not skills:
+        return jsonify({"message": "Branch and Skills required"}), 400
+
+
+    student.phone = phone
+    student.branch = branch
+    student.cgpa = cgpa
+    student.skills = skills
+
+    db.session.commit()
+
+    return jsonify({"message": "Profile updated successfully"})
 
 
 @student_bp.route("/student/my_applications", methods=["GET"])

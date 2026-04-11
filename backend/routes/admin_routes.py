@@ -73,18 +73,6 @@ def view_companies():
 
     return jsonify(result)
 
-    result = []
-
-    for c in companies:
-        result.append({
-            "id": c.id,
-            "company_name": c.company_name,
-            "website": c.website,
-            "status": c.approval_status,
-            "user_id": c.user_id 
-        })
-
-    return jsonify(result)
 
 
 @admin_bp.route("/admin/approve_company/<int:company_id>", methods=["PUT"])

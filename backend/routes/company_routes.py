@@ -159,7 +159,12 @@ def view_applicants(drive_id):
 
         result.append({
             "application_id": app.id,
-            "student_name": student.name,
+            "student_name": student.name if student else "",
+            "email": student.email if student else "",
+            "phone": student.phone if student else "",
+            "branch": student.branch if student else "",
+            "cgpa": student.cgpa if student else "",
+            "skills": student.skills if student else "",
             "status": app.status,
             "resume": student.resume if student else "",
             "interview_date": str(app.interview_date) if app.interview_date else ""
@@ -215,6 +220,18 @@ def update_application(app_id):
             application.interview_date = datetime.strptime(interview_date, "%Y-%m-%d %H:%M")
         except:
             return jsonify({"message": "Invalid datetime format"}), 400
+        
+        from tasks.reminder_tasks import send_interview_email
+
+        student = db.session.get(Student, application.student_id)
+        drive = db.session.get(Drive, application.drive_id)
+
+        send_interview_email.delay(
+            student.email,
+            student.name,
+            drive.job_title,
+            str(application.interview_date)
+        )
 
     db.session.commit()
 
@@ -262,3 +279,23 @@ def mark_placed(app_id):
     db.session.commit()
 
     return jsonify({"message": "Student marked as placed"})
+
+@company_bp.route("/company/complete_drive/<int:drive_id>", methods=["PUT"])
+@jwt_required()
+def complete_drive(drive_id):
+
+    user_id = int(get_jwt_identity())
+    company = verify_company(user_id)
+
+    if not company:
+        return jsonify({"message": "Access denied"}), 403
+
+    drive = db.session.get(Drive, drive_id)
+
+    if not drive or drive.company_id != company.id:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    drive.status = "Completed"
+    db.session.commit()
+
+    return jsonify({"message": "Drive marked as completed"})

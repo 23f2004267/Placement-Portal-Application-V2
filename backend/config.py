@@ -16,3 +16,11 @@ class Config:
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = "redis://localhost:6379/0"
     CACHE_DEFAULT_TIMEOUT = 60
+
+    MAIL_SERVER = "smtp.gmail.com"
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+
+
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")

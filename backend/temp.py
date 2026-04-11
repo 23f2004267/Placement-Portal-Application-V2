@@ -1,0 +1,2 @@
+from tasks.export_tasks import export_student_applications
+export_student_applications.delay(1)

@@ -7,6 +7,7 @@ from models.drive import Drive
 from models.student import Student
 from models.company import Company
 from models import db
+import os
 
 
 @celery.task
@@ -18,7 +19,10 @@ def export_student_applications(student_id):
         student_id=student_id
     ).all()
 
-    filename = f"student_applications_{student_id}.csv"
+    export_folder = "exports"
+    os.makedirs(export_folder, exist_ok=True)
+
+    filename = os.path.join(export_folder, f"student_applications_{student_id}.csv")
 
     with open(filename, "w", newline="") as file:
 

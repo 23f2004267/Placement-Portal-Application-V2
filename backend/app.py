@@ -59,6 +59,11 @@ def get_file(filename):
     upload_folder = os.path.join(os.getcwd(), "uploads")
     return send_from_directory(upload_folder, filename)
 
+@app.route("/exports/<filename>")
+def get_export_file(filename):
+    export_folder = os.path.join(os.getcwd(), "exports")
+    return send_from_directory(export_folder, filename)
+
 
 @app.route("/")
 def home():

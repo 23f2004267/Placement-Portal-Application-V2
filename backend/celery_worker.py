@@ -33,7 +33,8 @@ class ContextTask(celery.Task):
 celery.Task = ContextTask
 
 
-import tasks.reminder_tasks
+from tasks import reminder_tasks
 import tasks.export_tasks
 import tasks.report_tasks
+print("Loaded reminder tasks:", dir(reminder_tasks))
 
