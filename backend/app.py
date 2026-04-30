@@ -77,6 +77,12 @@ from sqlalchemy.exc import OperationalError
 with app.app_context():
 
     try:
+        db.create_all()
+        print("Tables created successfully")
+    except Exception as e:
+        print("DB create error:", e)
+
+    try:
         admin = User.query.filter_by(role="admin").first()
 
         if not admin:
@@ -87,10 +93,10 @@ with app.app_context():
             )
             db.session.add(admin)
             db.session.commit()
+            print("Admin created")
 
-    except OperationalError:
-        print("Tables not ready yet (migration pending)")
-
+    except Exception as e:
+        print("Admin creation skipped:", e)
 
 if __name__ == "__main__":
     app.run(debug=True)
