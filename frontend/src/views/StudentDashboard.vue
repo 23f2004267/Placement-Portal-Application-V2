@@ -2,12 +2,15 @@
 <div class="dashboard">
 
     <div class="top-bar">
-        <h2>Student Dashboard</h2>
+        <h2>Hello {{ studentName }}</h2>
+        
         <div class="top-actions">
             <button @click="goToApplications">My Applications</button>
             <button @click="logout">Logout</button>
         </div>
     </div>
+    
+
 
     <div class="summary-box">
         <p><b>Student Name:</b> {{ studentName }}</p>
@@ -17,15 +20,13 @@
     <div class="upload-box">
         <input type="file" @change="handleFile" />
         <button @click="uploadResume">Upload Resume</button>
-        <p v-if="resumePath" style="color:green;">
-            Resume already uploaded
-        </p>
 
         <button v-if="resumePath" @click="viewResume">
             View Resume
         </button>
         <p v-if="message">{{ message }}</p>
     </div>
+    
 
     <div class="search-box"> 
         <input
@@ -65,6 +66,18 @@
             </p>
         </div>
     </div>
+    <div class="profile-box">
+        <h3>Update Profile</h3>
+
+        <div class="form-container">
+    <input type="tel" v-model="phone" placeholder="Phone" />
+    <input type="text" v-model="branch" placeholder="Branch" />
+    <input type="number" step="0.01" v-model="cgpa" placeholder="CGPA" />
+    <textarea v-model="skills" placeholder="Skills"></textarea>
+</div>
+
+        <button @click="updateProfile">Update Profile</button>
+    </div>
 
 </div>
 </template>
@@ -82,22 +95,14 @@ export default {
             message: "",
             resumePath: "",
             isStudent: false,
+            phone: "",
+            branch: "",
+            cgpa: "",
+            skills: "",
         }
     },
 
     methods: {
-        async fetchDashboard() {
-            try {
-                const res = await API.get("/student/dashboard")
-                this.studentName = res.data.student_name
-                this.totalApplications = res.data.applications
-                this.resumePath = res.data.resume
-            } catch (err) {
-                console.log("Dashboard error:", err)
-                this.message = "Failed to load dashboard"
-            }
-        },
-
         async fetchDrives() {
             try {
                 const res = await API.get("/student/drives")
@@ -125,6 +130,12 @@ export default {
             try{
                 const res = await API.post("/student/upload_resume", formData)
                 this.message = res.data.message
+                this.resumePath = res.data.resume
+                setTimeout(() => {
+                    this.message = ""
+                }, 3000)
+
+                this.fetchDashboard()
             }catch(err){
                 this.message = "Upload failed"
             }
@@ -150,6 +161,37 @@ export default {
             }
         },
 
+        async updateProfile(){
+            if(this.phone && !/^[0-9]{10}$/.test(this.phone)){
+                alert("Phone must be 10 digits")
+                return
+            }
+
+            if(this.cgpa && (this.cgpa < 0 || this.cgpa > 10)){
+                alert("CGPA must be between 0 and 10")
+                return
+            }
+
+            if(!this.branch || !this.skills){
+                alert("Branch and Skills are required")
+                return
+            }
+
+            try{
+                const res = await API.put("/student/update_profile",{
+                    phone: this.phone,
+                    branch: this.branch,
+                    cgpa: this.cgpa,
+                    skills: this.skills
+                })
+
+                alert(res.data.message)
+            }catch(err){
+                alert("Update failed")
+            }
+        },
+        
+
         resetDrives() {
             this.searchTitle = ""
             this.message = ""
@@ -170,6 +212,24 @@ export default {
             }
         },
 
+        async fetchDashboard(){
+            try{
+                const res = await API.get("/student/dashboard")
+
+                this.studentName = res.data.student_name || "Student"
+
+                this.phone = res.data.phone || ""
+                this.branch = res.data.branch || ""
+                this.cgpa = res.data.cgpa || ""
+                this.skills = res.data.skills || ""
+                this.resumePath = res.data.resume || ""
+                this.totalApplications = res.data.total_applications || 0
+
+            }catch(err){
+                console.log("Dashboard error:", err)
+            }
+        },
+
         viewDetails(id) {
             this.$router.push("/drive/" + id)
         },
@@ -184,13 +244,18 @@ export default {
             this.$router.push("/")
         },
         viewResume(){
-            const filename = this.resumePath
-            window.open("http://127.0.0.1:5000/uploads/" + filename)
+            if(!this.resumePath){
+                alert("No resume available")
+                return
+            }
+
+            window.open("http://127.0.0.1:5000/uploads/" + this.resumePath)
         }
     },
 
-    mounted() {
+    mounted: function() {
         this.isStudent = localStorage.getItem("role") === "student"
+
         this.fetchDashboard()
         this.fetchDrives()
     }
@@ -264,4 +329,21 @@ export default {
     padding: 6px 12px;
     cursor: pointer;
 }
+.form-container input,
+.form-container textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.form-container input {
+    height: 40px;
+}
+
+.form-container textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
 </style>

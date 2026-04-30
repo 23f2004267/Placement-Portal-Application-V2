@@ -15,6 +15,9 @@
         <p><b>Description:</b> {{ drive.job_description }}</p>
         <p><b>Salary:</b> {{ drive.salary }}</p>
         <p><b>Status:</b> {{ drive.status }}</p>
+        <p v-if="drive.interview_date">
+            <b>Interview Scheduled:</b> {{ formatDate(drive.interview_date) }}
+        </p>
         <p>
             <b>Application Status:</b>
             {{ drive.application_status }}
@@ -87,6 +90,10 @@ export default {
                     this.message = "Application failed"
                 }
             }
+        },
+        formatDate(dateStr){
+            if(!dateStr) return ""
+            return new Date(dateStr).toLocaleString()
         },
 
         goBack() {

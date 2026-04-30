@@ -2,7 +2,7 @@
 <div class="company-dashboard">
 
     <div class="top-bar">
-        <h2>Company Dashboard</h2>
+        <h2>Hello {{ companyName }} Administrator</h2>
         <button @click="logout">Logout</button>
     </div>
 
@@ -77,6 +77,12 @@
             </button>
             <p><b>Name:</b> {{ app.student_name }}</p>
             <p><b>Status:</b> {{ app.status }}</p>
+            <p><b>Email:</b> {{ app.email }}</p>
+            <p><b>Phone:</b> {{ app.phone }}</p>
+            <p><b>Branch:</b> {{ app.branch }}</p>
+            <p><b>CGPA:</b> {{ app.cgpa }}</p>
+            <p><b>Skills:</b> {{ app.skills }}</p>
+
             <p v-if="app.interview_date">
                 <b>Interview:</b> {{ app.interview_date }}
             </p>
@@ -135,7 +141,7 @@ export default {
         async fetchDashboard() {
             try {
                 const res = await API.get("/company/dashboard")
-                this.companyName = res.data.company_name
+                this.companyName = res.data.company_name || "Company"
                 this.totalDrives = res.data.total_drives
             } catch (err) {
                 this.message = "Failed to load dashboard"
@@ -194,10 +200,15 @@ export default {
                 this.applicants = res.data.map(a => ({
                     application_id: a.application_id,
                     student_name: a.student_name,
+                    email: a.email,
+                    phone: a.phone,
+                    branch: a.branch,
+                    cgpa: a.cgpa,
+                    skills: a.skills,
                     status: a.status,
                     newStatus: a.status,
                     resume: a.resume,
-                    interview_date: a.interview_date || ""
+                    interview_date: a.interview_date
                 }))
 
             } catch (err) {
@@ -211,8 +222,7 @@ export default {
                 return
             }
 
-            const filename = path.split("/").pop()
-            window.open("http://127.0.0.1:5000/uploads/" + filename)
+            window.open("http://127.0.0.1:5000/uploads/" + path)
         },
         
 
@@ -264,7 +274,7 @@ export default {
             try{
                 this.message = ""
 
-                const res = await API.put("/admin/complete_drive/" + id)
+                const res = await API.put("/company/complete_drive/" + id)
 
                 this.message = res.data.message
 

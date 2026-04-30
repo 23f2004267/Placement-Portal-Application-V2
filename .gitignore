@@ -8,6 +8,7 @@ venv/
 env/
 
 node_modules/
+instance/
 
 *.sqlite3
 *.db

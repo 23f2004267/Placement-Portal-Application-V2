@@ -50,6 +50,7 @@ export default {
 
                 localStorage.setItem("token", token)
                 localStorage.setItem("role", role)
+                localStorage.setItem("user_id", res.data.user_id)
 
                 if (role === "student") {
                     this.$router.push("/student")

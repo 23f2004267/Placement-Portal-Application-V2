@@ -49,7 +49,7 @@ this.newStatus = this.app ? this.app.status : ""
 
 viewResume(){
     const filename = this.app.resume.split("/").pop()
-    window.open("http://127.0.0.1:5000/uploads/" + filename)
+    window.open("http://127.0.0.1:5000/uploads/" + this.app.resume)
 },
 
 goBack(){

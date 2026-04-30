@@ -5,7 +5,8 @@
         <h2>Student Application History</h2>
         <button @click="goBack">Back</button>
         <button @click="logout">Logout</button>  
-        <button @click="exportCSV">Export CSV</button>   
+        <button @click="exportCSV">Export CSV</button> 
+        <button v-if="lastFile" @click="downloadCSV">Download CSV</button>  
     </div>
 
     <div class="info-box">
@@ -56,7 +57,8 @@ export default {
         return {
             studentName: "",
             applications: [],
-            message: ""
+            message: "",
+            lastFile: ""
         }
     },
 
@@ -84,6 +86,7 @@ export default {
             try{
                 const res = await API.post("/student/export_applications")
                 alert(res.data.message)
+                this.lastFile = "student_applications_" + localStorage.getItem("user_id") + ".csv"
             }catch(err){
                 alert("Export failed")
             }
@@ -93,6 +96,10 @@ export default {
             if (!dateStr) return ""
             const d = new Date(dateStr)
             return d.toLocaleDateString()
+        },
+
+        downloadCSV(){
+            window.open("http://127.0.0.1:5000/exports/" + this.lastFile)
         },
 
         goBack() {

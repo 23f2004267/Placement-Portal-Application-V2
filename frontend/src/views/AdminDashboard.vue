@@ -2,7 +2,7 @@
 <div class="admin-dashboard">
 
     <div class="top-bar">
-        <h2>Admin Dashboard</h2>
+        <h2>Hello Vimlendu</h2>
         <button class="logout-btn" @click="logout">Logout</button>
     </div>
 
@@ -271,8 +271,12 @@ export default {
         },
 
         viewResume(path){
-            const filename = path.split("/").pop()
-            window.open("http://127.0.0.1:5000/uploads/" + filename)
+            if(!path){
+                alert("No resume available")
+                return
+            }
+
+            window.open("http://127.0.0.1:5000/uploads/" + path)
         },
 
         async approveDrive(id) {
@@ -352,7 +356,7 @@ export default {
 
         async markComplete(id){
             try{
-                const res = await API.put("/admin/complete_drive/" + id)
+                const res = await API.put("/company/complete_drive/" + id)
                 this.message = res.data.message
                 this.fetchDrives()
             }catch(err){
