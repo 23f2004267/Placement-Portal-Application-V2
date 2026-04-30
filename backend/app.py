@@ -72,9 +72,9 @@ def home():
     return "Placement Portal Backend Run check"
 
 
-with app.app_context():
+from sqlalchemy.exc import OperationalError
 
-    from sqlalchemy.exc import OperationalError
+with app.app_context():
 
     try:
         admin = User.query.filter_by(role="admin").first()
