@@ -4,7 +4,14 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
 
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    db_uri = os.getenv("DATABASE_URL")
+
+    if db_uri:
+        if db_uri.startswith("postgres://"):
+            db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = db_uri
+    else:
+        SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "placement.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = "placement_secret_key"
@@ -24,5 +31,3 @@ class Config:
 
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-
-    #SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "placement.db")

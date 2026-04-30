@@ -32,7 +32,7 @@ print("INSTANCE PATH:", app.instance_path)
 
 db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
 
-if db_uri.startswith("sqlite:///"):
+if db_uri and db_uri.startswith("sqlite:///"):
     db_path = db_uri.replace("sqlite:///", "")
     print("ACTIVE SQLITE DB FILE:", os.path.abspath(db_path))
 else:
@@ -41,6 +41,8 @@ else:
 CORS(app, supports_credentials=True)
 
 db.init_app(app)
+from flask_migrate import Migrate
+migrate = Migrate(app, db)
 
 jwt = JWTManager(app)
 
@@ -72,7 +74,6 @@ def home():
 
 with app.app_context():
 
-    db.create_all()
 
     admin = User.query.filter_by(role="admin").first()
 
