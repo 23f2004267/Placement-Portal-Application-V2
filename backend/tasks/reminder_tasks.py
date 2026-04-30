@@ -12,7 +12,7 @@ from models import db
 @celery.task
 def send_interview_reminders():
 
-    tomorrow = datetime.now() + timedelta(days=1)
+    now = datetime.now()
 
     applications = Application.query.filter(
         Application.interview_date != None
@@ -22,46 +22,62 @@ def send_interview_reminders():
 
         interview_time = app.interview_date
 
-        if interview_time and interview_time.date() == tomorrow.date():
+        if not interview_time:
+            continue
 
-            student = db.session.get(Student, app.student_id)
-            drive = db.session.get(Drive, app.drive_id)
+        time_diff = interview_time - now
+        minutes = time_diff.total_seconds() / 60
 
-            message = (
-                f"Reminder: {student.name}, "
-                f"you have an interview for {drive.job_title} "
-                f"on {interview_time}"
-            )
+        student = db.session.get(Student, app.student_id)
+        drive = db.session.get(Drive, app.drive_id)
+        company_name = drive.company.company_name if drive else "Company"
 
-            with open("notifications.log", "a") as f:
-                f.write(message + "\n")
-
-            print("NOTIFICATION SENT:", message)
-
-            send_interview_email(
+        if 1430 < minutes < 1450 and not app.reminder_24_sent:
+            send_email(
                 student.email,
-                student.name,
-                drive.job_title,
-                interview_time
+                "Reminder: Upcoming Interview",
+                f"Dear {student.name}, your interview for {drive.job_title} at {company_name} is tomorrow at {interview_time}."
             )
+            app.reminder_24_sent = True
+
+        elif 230 < minutes < 250 and not app.reminder_4_sent:
+            send_email(
+                student.email,
+                "Interview Reminder",
+                f"Hi {student.name}, your interview for {drive.job_title} is in a few hours. Be prepared."
+            )
+            app.reminder_4_sent = True
+
+        elif 20 < minutes < 40 and not app.reminder_30_sent:
+            send_email(
+                student.email,
+                "Interview Starting Soon",
+                f"Hi {student.name}, your interview starts in 30 minutes. Stay ready!"
+            )
+            app.reminder_30_sent = True
+
+    db.session.commit()
 
 
-def send_interview_email(student_email, student_name, job_title, interview_time):
+def send_interview_email(student_email, student_name, job_title, interview_time, company_name):
 
-    subject = "Interview Scheduled"
+    subject = f"Interview Scheduled – {company_name}"
 
     body = f"""
-        Hello {student_name},
+Dear {student_name},
 
-        Your interview has been scheduled.
+We are pleased to inform you that your interview for the position of {job_title} at {company_name} has been successfully scheduled.
 
-        Job Title: {job_title}
-        Interview Time: {interview_time}
+Interview Details:
+Date & Time: {interview_time}
 
-        Best of luck!
+Please ensure you are prepared and available at the scheduled time.
 
-        Placement Portal
-        """
+We wish you the best of luck.
+
+Regards,
+{company_name}
+"""
 
     send_email(student_email, subject, body)
 

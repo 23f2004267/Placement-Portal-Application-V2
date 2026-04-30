@@ -11,12 +11,12 @@ celery = Celery(
 )
 
 celery.conf.update(app.config)
-from celery.schedules import crontab
+from datetime import timedelta
 
 celery.conf.beat_schedule = {
-    "send-interview-reminders-every-day": {
+    "check-reminders-every-minute": {
         "task": "tasks.reminder_tasks.send_interview_reminders",
-        "schedule": crontab(hour=9, minute=0),
+        "schedule": timedelta(minutes=1),
     }
 }
 

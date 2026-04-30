@@ -18,6 +18,8 @@ def register_student():
     password = data.get("password")
     name = data.get("name")
     email = data.get("email")
+    if not name:
+        return jsonify({"message": "Name is required"}), 400
 
     if not username or not password:
         return jsonify({"message": "Username and password required"}), 400

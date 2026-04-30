@@ -13,6 +13,10 @@ class Application(db.Model):
         db.String(50),
         default="Applied"
     )
+    reminder_24_sent = db.Column(db.Boolean, default=False)
+    reminder_4_sent = db.Column(db.Boolean, default=False)
+    reminder_30_sent = db.Column(db.Boolean, default=False)
+    
     interview_date = db.Column(
         db.DateTime,
         nullable=True

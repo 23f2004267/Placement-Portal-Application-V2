@@ -226,11 +226,12 @@ def update_application(app_id):
         student = db.session.get(Student, application.student_id)
         drive = db.session.get(Drive, application.drive_id)
 
-        send_interview_email.delay(
+        send_interview_email(
             student.email,
             student.name,
             drive.job_title,
-            str(application.interview_date)
+            application.interview_date,
+            drive.company.company_name
         )
 
     db.session.commit()
