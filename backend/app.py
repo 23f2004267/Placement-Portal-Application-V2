@@ -74,19 +74,22 @@ def home():
 
 with app.app_context():
 
+    from sqlalchemy.exc import OperationalError
 
-    admin = User.query.filter_by(role="admin").first()
+    try:
+        admin = User.query.filter_by(role="admin").first()
 
-    if not admin:
+        if not admin:
+            admin = User(
+                username="Vimlendu",
+                password=generate_password_hash("Vimlendu@2001"),
+                role="admin"
+            )
+            db.session.add(admin)
+            db.session.commit()
 
-        admin = User(
-            username="Vimlendu",
-            password=generate_password_hash("Vimlendu@2001"),
-            role="admin"
-        )
-
-        db.session.add(admin)
-        db.session.commit()
+    except OperationalError:
+        print("Tables not ready yet (migration pending)")
 
 
 if __name__ == "__main__":
