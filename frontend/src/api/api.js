@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const API = axios.create({
-    baseURL: "http://127.0.0.1:5000"
+    baseURL: "placement-portal-application-v2-production.up.railway.app"
 })
 
 API.interceptors.request.use(
