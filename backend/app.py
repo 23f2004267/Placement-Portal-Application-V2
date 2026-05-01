@@ -23,7 +23,15 @@ from routes.admin_routes import admin_bp
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "https://placement-portal-application-v2.vercel.app"
+        ]
+    }
+}, supports_credentials=True)
+
 app.config.from_object(Config)
 app.config["broker_url"] = Config.broker_url
 app.config["result_backend"] = Config.result_backend
@@ -39,7 +47,6 @@ if db_uri and db_uri.startswith("sqlite:///"):
 else:
     print("ACTIVE DATABASE IS NOT SQLITE")
 
-CORS(app, supports_credentials=True)
 
 db.init_app(app)
 from flask_migrate import Migrate
