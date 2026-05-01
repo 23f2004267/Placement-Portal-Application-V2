@@ -49,8 +49,6 @@ else:
 
 
 db.init_app(app)
-from flask_migrate import Migrate
-migrate = Migrate(app, db)
 
 jwt = JWTManager(app)
 
