@@ -23,6 +23,7 @@ from routes.admin_routes import admin_bp
 
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config.from_object(Config)
 app.config["broker_url"] = Config.broker_url
 app.config["result_backend"] = Config.result_backend
