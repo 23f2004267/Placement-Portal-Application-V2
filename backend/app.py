@@ -24,18 +24,7 @@ from routes.admin_routes import admin_bp
 
 app = Flask(__name__)
 
-CORS(
-    app,
-    resources={
-        r"/*": {
-            "origins": [
-                "https://placement-portal-application-v2.vercel.app",
-                "https://placement-portal-application-v2-pac8sjmae-23f2004267s-projects.vercel.app"
-            ]
-        }
-    },
-    supports_credentials=True
-)
+CORS(app)
 
 app.config.from_object(Config)
 app.config["broker_url"] = Config.broker_url
