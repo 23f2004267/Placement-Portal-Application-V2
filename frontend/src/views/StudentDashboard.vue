@@ -249,7 +249,7 @@ export default {
                 return
             }
 
-            window.open("http://127.0.0.1:5000/uploads/" + this.resumePath)
+            window.open(`${import.meta.env.VITE_API_URL}/uploads/` + this.resumePath)
         }
     },
 

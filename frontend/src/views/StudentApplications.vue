@@ -99,7 +99,7 @@ export default {
         },
 
         downloadCSV(){
-            window.open("http://127.0.0.1:5000/exports/" + this.lastFile)
+            window.open(`${import.meta.env.VITE_API_URL}/exports/` + this.lastFile)
         },
 
         goBack() {
