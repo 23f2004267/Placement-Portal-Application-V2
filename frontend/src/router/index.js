@@ -21,7 +21,7 @@ const routes = [
     { path: "/company", component: CompanyDashboard, meta: { requiresAuth: true } },
     { path: "/admin", component: AdminDashboard, meta: { requiresAuth: true } },
     { path: "/drive/:id", component: DriveDetails, meta: { requiresAuth: true } },
-    { path: "/application/:id", component: ApplicationDetails, meta: { requiresAuth: true } }
+    {path: "/application/:id", component: ApplicationDetails, meta: { requiresAuth: true, role: "admin"} }
 ]
 
 const router = createRouter({
@@ -42,7 +42,10 @@ router.beforeEach((to, from, next) => {
     else if (to.path.startsWith("/company") && role !== "company") {
         next("/")
     }
-    else if (to.path.startsWith("/admin") && role !== "admin") {
+    else if (
+        (to.path.startsWith("/admin") || to.meta.role === "admin")
+        && role !== "admin"
+    ) {
         next("/")
     }
     else {

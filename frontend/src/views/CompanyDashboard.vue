@@ -93,7 +93,6 @@
                 <option>Interview</option>
                 <option>Offer</option>
                 <option>Rejected</option>
-                <option>Placed</option>
             </select>
 
             <div v-if="app.newStatus === 'Interview'">
@@ -196,6 +195,8 @@ export default {
 
             try {
                 const res = await API.get("/company/applicants/" + driveId)
+
+                console.log("Applicants API Response:", res.data)
 
                 this.applicants = res.data.map(a => ({
                     application_id: a.application_id,

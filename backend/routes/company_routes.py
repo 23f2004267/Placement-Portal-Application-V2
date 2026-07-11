@@ -90,6 +90,11 @@ def create_drive():
     if salary <= 0:
         return jsonify({"message": "Salary must be greater than 0"}), 400
 
+    if salary > 100000000:
+        return jsonify({
+            "message": "Salary value seems invalid."
+        }), 400
+
     drive = Drive(
         company_id=company.id,
         job_title=job_title.strip(),
@@ -191,9 +196,12 @@ def update_application(app_id):
 
     drive = db.session.get(Drive, application.drive_id)
 
+    if not drive:
+        return jsonify({"message": "Drive not found"}), 404
+
     if drive.company_id != company.id:
         return jsonify({"message": "Unauthorized action"}), 403
-
+    
     data = request.get_json()
 
     new_status = data.get("status")
@@ -211,30 +219,66 @@ def update_application(app_id):
     if new_status not in valid_status:
         return jsonify({"message": "Invalid status"}), 400
 
+
+    allowed_transitions = {
+        "Applied": ["Shortlisted", "Rejected"],
+        "Shortlisted": ["Interview", "Rejected"],
+        "Interview": ["Offer", "Rejected"],
+        "Offer": ["Rejected"],
+        "Placed": [],
+        "Rejected": []
+    }
+
+    current_status = application.status
+
+    if new_status not in allowed_transitions[current_status]:
+        return jsonify({
+            "message": f"Cannot change status from {current_status} to {new_status}"
+        }), 400
+
+    print("OLD STATUS:", application.status)
+    print("NEW STATUS RECEIVED:", new_status)
+
     application.status = new_status
 
-    if new_status == "Interview" and interview_date:
-        from datetime import datetime
-        try:
-            interview_date = interview_date.replace("T", " ")
-            application.interview_date = datetime.strptime(interview_date, "%Y-%m-%d %H:%M")
-        except:
-            return jsonify({"message": "Invalid datetime format"}), 400
-        
-        from tasks.reminder_tasks import send_interview_email
+    print("STATUS AFTER ASSIGNMENT:", application.status)
 
-        student = db.session.get(Student, application.student_id)
-        drive = db.session.get(Drive, application.drive_id)
+    if new_status == "Interview":
 
-        send_interview_email(
-            student.email,
-            student.name,
-            drive.job_title,
-            application.interview_date,
-            drive.company.company_name
-        )
+        if interview_date:
+            from datetime import datetime
+
+            try:
+                interview_date = interview_date.replace("T", " ")
+
+                application.interview_date = datetime.strptime(
+                    interview_date,
+                    "%Y-%m-%d %H:%M"
+                )
+
+            except:
+                return jsonify({"message": "Invalid datetime format"}), 400
+
+            from tasks.reminder_tasks import send_interview_email
+
+            student = db.session.get(Student, application.student_id)
+
+            send_interview_email.delay(
+                student.email,
+                student.name,
+                drive.job_title,
+                str(application.interview_date),
+                drive.company.company_name
+            )
+
+    else:
+        application.interview_date = None
 
     db.session.commit()
+
+    db.session.refresh(application)
+
+    print("STATUS AFTER COMMIT:", application.status)
 
     return jsonify({"message": "Application status updated"})
 
@@ -266,8 +310,17 @@ def mark_placed(app_id):
 
     if application.status == "Placed":
         return jsonify({"message": "Already placed"}), 400
+    
+    if application.status != "Offer":
+        return jsonify({
+            "message": "Student must have Offer status before being marked as Placed"
+        }), 400
+    
+    print("BEFORE:", application.status)
 
     application.status = "Placed"
+
+    print("AFTER:", application.status)
 
     placement = Placement(
         student_id=application.student_id,
@@ -278,6 +331,8 @@ def mark_placed(app_id):
 
     db.session.add(placement)
     db.session.commit()
+
+    print("COMMIT SUCCESS")
 
     return jsonify({"message": "Student marked as placed"})
 

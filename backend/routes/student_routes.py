@@ -103,7 +103,10 @@ def search_drives():
     if not student:
         return jsonify({"message": "Access denied"}), 403
 
-    title = request.args.get("title")
+    title = request.args.get("title", "").strip()
+
+    if not title:
+        return jsonify([])
 
     drives = Drive.query.filter(
         Drive.job_title.contains(title),
@@ -188,18 +191,31 @@ def apply_drive(drive_id):
 
     if not student:
         return jsonify({"message": "Access denied"}), 403
-
-    existing = Application.query.filter_by(
-        student_id=student.id,
-        drive_id=drive_id
-    ).first()
-
-    if existing:
-        return jsonify({"message": "Already applied"}), 400
+    
     drive = db.session.get(Drive, drive_id)
 
     if not drive:
         return jsonify({"message": "Drive not found"}), 404
+
+    if not student.resume:
+        return jsonify({
+            "message": "Please upload your resume before applying."
+        }), 400
+
+    if not student.phone:
+        return jsonify({
+            "message": "Please complete your profile."
+        }), 400
+
+    if not student.skills:
+        return jsonify({
+            "message": "Please complete your profile."
+        }), 400
+
+    if student.cgpa is None:
+        return jsonify({
+            "message": "Please complete your profile."
+        }), 400
 
     if drive.status != "Approved":
         return jsonify({"message": "Drive not available for application"}), 400
@@ -207,18 +223,14 @@ def apply_drive(drive_id):
     if drive.application_deadline and drive.application_deadline < date.today():
         return jsonify({"message": "Application deadline passed"}), 400
 
-    existing = Placement.query.filter_by(student_id=student.id).first()
-    if existing:
-        return jsonify({"message": "Already placed, cannot apply"}), 400
-    
 
-    placed = Application.query.filter_by(
-        student_id=student.id,
-        status="Placed"
+    existing_placement = Placement.query.filter_by(
+        student_id=student.id
     ).first()
 
-    if placed:
-        return jsonify({"message": "Already placed. Cannot apply"}), 400
+    if existing_placement:
+        return jsonify({"message": "Already placed, cannot apply"}), 400
+
 
     existing_application = Application.query.filter_by(
         student_id=student.id,
@@ -239,7 +251,6 @@ def apply_drive(drive_id):
 
     return jsonify({"message": "Application submitted"})
 
-
 @student_bp.route("/student/upload_resume", methods=["POST", "OPTIONS"])
 @jwt_required()
 def upload_resume():
@@ -257,6 +268,11 @@ def upload_resume():
 
     if not file:
         return jsonify({"message": "No file uploaded"}), 400
+
+    if not file.filename.lower().endswith(".pdf"):
+        return jsonify({
+            "message": "Only PDF resumes are allowed."
+        }), 400
 
     import os
 

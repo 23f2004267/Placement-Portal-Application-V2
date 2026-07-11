@@ -18,6 +18,7 @@ def register_student():
     password = data.get("password")
     name = data.get("name")
     email = data.get("email")
+
     if not name:
         return jsonify({"message": "Name is required"}), 400
 
@@ -27,36 +28,61 @@ def register_student():
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
+
         if existing_user.is_active:
             return jsonify({"message": "Username already exists"}), 400
+
         else:
             existing_user.password = generate_password_hash(password)
-            existing_user.role = "student" 
+            existing_user.role = "student"
             existing_user.is_active = True
+
+            student_profile = Student.query.filter_by(
+                user_id=existing_user.id
+            ).first()
+
+            if student_profile:
+                student_profile.name = name
+                student_profile.email = email
+            else:
+                student_profile = Student(
+                    user_id=existing_user.id,
+                    name=name,
+                    email=email
+                )
+                db.session.add(student_profile)
 
             db.session.commit()
 
-            return jsonify({"message": "Student re-registered successfully"})  
+            return jsonify({"message": "Student re-registered successfully"})
 
-    new_user = User(
-        username=username,
-        password=generate_password_hash(password),
-        role="student"
-    )
+    try:
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+            role="student"
+        )
 
-    db.session.add(new_user)
-    db.session.commit()
+        db.session.add(new_user)
 
-    student_profile = Student(
-        user_id=new_user.id,
-        name=name,
-        email=email
-    )
+        db.session.flush()
 
-    db.session.add(student_profile)
-    db.session.commit()
+        student_profile = Student(
+            user_id=new_user.id,
+            name=name,
+            email=email
+        )
 
-    return jsonify({"message": "Student registered successfully"})
+        db.session.add(student_profile)
+
+        db.session.commit()
+
+        return jsonify({"message": "Student registered successfully"})
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Registration failed"}), 500
+    
 
 
 @auth_bp.route("/register/company", methods=["POST"])
@@ -72,30 +98,47 @@ def register_company():
     if not username or not password:
         return jsonify({"message": "Username and password required"}), 400
 
+    if not company_name:
+        return jsonify({"message": "Company name is required"}), 400
+
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
         return jsonify({"message": "Username already exists"}), 400
 
-    new_user = User(
-        username=username,
-        password=generate_password_hash(password),
-        role="company"
-    )
+    existing_company = Company.query.filter_by(
+        company_name=company_name
+    ).first()
 
-    db.session.add(new_user)
-    db.session.commit()
+    if existing_company:
+        return jsonify({"message": "Company already registered"}), 400
 
-    company_profile = Company(
-        user_id=new_user.id,
-        company_name=company_name,
-        website=website
-    )
+    try:
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+            role="company"
+        )
 
-    db.session.add(company_profile)
-    db.session.commit()
+        db.session.add(new_user)
 
-    return jsonify({"message": "Company registered. Waiting for admin approval."})
+        db.session.flush()
+
+        company_profile = Company(
+            user_id=new_user.id,
+            company_name=company_name,
+            website=website
+        )
+
+        db.session.add(company_profile)
+
+        db.session.commit()
+
+        return jsonify({"message": "Company registered. Waiting for admin approval."})
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Company registration failed"}), 500
 
 
 @auth_bp.route("/login", methods=["POST"])

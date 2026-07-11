@@ -54,17 +54,22 @@ app.register_blueprint(student_bp)
 app.register_blueprint(company_bp)
 app.register_blueprint(admin_bp)
 
-from flask import send_from_directory
-
-@app.route("/uploads/<filename>")
-def get_file(filename):
-    upload_folder = os.path.join(os.getcwd(), "uploads")
-    return send_from_directory(upload_folder, filename)
+from flask_jwt_extended import jwt_required
 
 @app.route("/exports/<filename>")
 def get_export_file(filename):
+
     export_folder = os.path.join(os.getcwd(), "exports")
+
     return send_from_directory(export_folder, filename)
+
+
+@app.route("/uploads/<filename>")
+def get_file(filename):
+
+    upload_folder = os.path.join(os.getcwd(), "uploads")
+
+    return send_from_directory(upload_folder, filename)
 
 
 @app.route("/")

@@ -14,6 +14,9 @@ instance/
 *.db
 
 .redis
-celerybeat-schedule
+
+backend/celerybeat-schedule*
+backend/uploads/
+backend/exports/
 
 .DS_Store

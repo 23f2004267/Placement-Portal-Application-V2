@@ -82,13 +82,21 @@ export default {
             }
         },
 
-        async exportCSV(){
-            try{
+        async exportCSV() {
+            try {
+
                 const res = await API.post("/student/export_applications")
+
                 alert(res.data.message)
-                this.lastFile = "student_applications_" + localStorage.getItem("user_id") + ".csv"
-            }catch(err){
+
+                if (res.data.filename) {
+                    this.lastFile = res.data.filename
+                }
+
+            } catch (err) {
+
                 alert("Export failed")
+
             }
         },
 

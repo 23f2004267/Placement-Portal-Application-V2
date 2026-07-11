@@ -4,6 +4,9 @@ from config import Config
 
 def send_email(to_email, subject, body):
 
+    if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+        return
+
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = Config.MAIL_USERNAME

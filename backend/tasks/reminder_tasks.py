@@ -59,7 +59,9 @@ def send_interview_reminders():
     db.session.commit()
 
 
+@celery.task
 def send_interview_email(student_email, student_name, job_title, interview_time, company_name):
+
 
     subject = f"Interview Scheduled – {company_name}"
 
