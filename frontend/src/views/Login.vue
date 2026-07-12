@@ -1,25 +1,55 @@
 <template>
 <div class="login-page">
+
     <div class="login-box">
-        <h2>Login</h2>
+
+        <h1 class="portal-title">Placement Portal</h1>
+
+        <p class="subtitle">
+            Sign in to continue
+        </p>
 
         <form @submit.prevent="loginUser">
-            <input type="text" v-model="username" placeholder="Username" />
-            <input type="password" v-model="password" placeholder="Password" />
 
-            <button type="submit">Login</button>
+            <input
+                type="text"
+                v-model="username"
+                placeholder="Username"
+            />
+
+            <input
+                type="password"
+                v-model="password"
+                placeholder="Password"
+                autocomplete="current-password"
+            />
+
+            <button type="submit">
+                Login
+            </button>
+
         </form>
 
-        <p>{{ message }}</p>
-
-        <p>
-            <router-link to="/register/student">Register as Student</router-link>
+        <p class="error-message">
+            {{ message }}
         </p>
 
-        <p>
-            <router-link to="/register/company">Register as Company</router-link>
-        </p>
+        <hr>
+
+        <div class="links">
+
+            <router-link to="/register/student">
+                Student Registration
+            </router-link>
+
+            <router-link to="/register/company">
+                Company Registration
+            </router-link>
+
+        </div>
+
     </div>
+
 </div>
 </template>
 
@@ -27,6 +57,7 @@
 import API from "../api/api"
 
 export default {
+
     data() {
         return {
             username: "",
@@ -36,76 +67,151 @@ export default {
     },
 
     methods: {
+
         async loginUser() {
+
             try {
+
                 this.message = ""
 
                 const res = await API.post("/login", {
+
                     username: this.username,
                     password: this.password
+
                 })
 
-                const token = res.data.access_token
-                const role = res.data.role
-
-                localStorage.setItem("token", token)
-                localStorage.setItem("role", role)
+                localStorage.setItem("token", res.data.access_token)
+                localStorage.setItem("role", res.data.role)
                 localStorage.setItem("user_id", res.data.user_id)
 
-                if (role === "student") {
+                if(res.data.role==="student"){
                     this.$router.push("/student")
                 }
 
-                if (role === "company") {
+                else if(res.data.role==="company"){
                     this.$router.push("/company")
                 }
 
-                if (role === "admin") {
+                else{
                     this.$router.push("/admin")
                 }
 
-            } catch (err) {
-                if (err.response && err.response.data && err.response.data.message) {
-                    this.message = err.response.data.message
-                } else {
-                    this.message = "Invalid credentials"
-                }
             }
+
+            catch(err){
+
+                this.message =
+                    err.response?.data?.message ||
+                    "Invalid Credentials"
+
+            }
+
         }
+
     }
+
 }
 </script>
 
-<style>
-.login-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+<style scoped>
+
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f6f9;
 }
 
-.login-box {
-    width: 320px;
-    border: 1px solid black;
-    border-radius: 12px;
-    padding: 20px;
+.login-page{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#2563eb,#1e40af);
+    padding:20px;
 }
 
-.login-box h2 {
-    text-align: center;
-    margin-bottom: 20px;
+.login-box{
+    width:460px;
+    max-width:90vw;
+    background:white;
+    border-radius:14px;
+    padding:40px;
+    box-shadow:0 10px 35px rgba(0,0,0,.15);
+    box-sizing:border-box;
 }
 
-.login-box input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    box-sizing: border-box;
+.portal-title{
+    text-align:center;
+    color:#1e3a8a;
+    font-size:44px;
+    font-weight:700;
+    line-height:1.15;
+    margin:0 0 12px 0;
+    word-break:keep-all;
 }
 
-.login-box button {
-    width: 100%;
-    padding: 10px;
-    cursor: pointer;
+.subtitle{
+    text-align:center;
+    color:#6b7280;
+    margin-bottom:30px;
+}
+
+.login-box input{
+    width:100%;
+    padding:13px;
+    margin-bottom:18px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    font-size:15px;
+    box-sizing:border-box;
+}
+
+.login-box input:focus{
+    outline:none;
+    border-color:#2563eb;
+}
+
+.login-box button{
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.login-box button:hover{
+    background:#1d4ed8;
+}
+
+.error-message{
+    text-align:center;
+    color:#dc2626;
+    min-height:22px;
+    margin-top:15px;
+}
+
+hr{
+    margin:25px 0;
+    border:none;
+    border-top:1px solid #e5e7eb;
+}
+
+.links{
+    display:flex;
+    justify-content:space-between;
+}
+
+.links a{
+    text-decoration:none;
+    color:#2563eb;
+    font-weight:500;
+}
+
+.links a:hover{
+    text-decoration:underline;
 }
 </style>

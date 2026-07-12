@@ -1,26 +1,96 @@
 <template>
 <div class="company-dashboard">
 
-    <div class="top-bar">
-        <h2>Hello {{ companyName }} Administrator</h2>
-        <button @click="logout">Logout</button>
+    <div class="hero-section">
+
+        <div>
+
+            <h1>Welcome, {{ companyName }}</h1>
+
+            <p>
+                
+            </p>
+
+        </div>
+
+        <button
+            class="logout-btn"
+            @click="logout">
+
+            Logout
+
+        </button>
+
     </div>
 
-    <div class="summary-box">
-        <p><b>Company:</b> {{ companyName }}</p>
-        <p><b>Total Drives:</b> {{ totalDrives }}</p>
-        <p>{{ message }}</p>
+    <div class="stats-grid">
+        <div class="stat-card">
+
+            <h2>{{ totalDrives }}</h2>
+
+            <p>📄 Total Drives</p>
+
+        </div>
+
+        <div class="stat-card">
+
+            <h2>{{ ongoingDrives.length }}</h2>
+
+            <p>Active Drives</p>
+
+        </div>
+
+        <div class="stat-card">
+
+            <h2>{{ completedDrives.length }}</h2>
+
+            <p>✔ Completed Drives</p>
+
+        </div>
     </div>
 
     <div class="create-box">
-        <h3>Create Drive</h3>
 
-        <input v-model="job_title" placeholder="Job Title" />
-        <textarea v-model="job_description" placeholder="Job Description"></textarea>
-        <input v-model="salary" placeholder="Salary" />
+        <h2>Create New Placement Drive</h2>
 
-        <button @click="createDrive">Create</button>
-    </div>
+        <p class="section-subtitle">
+        Publish a new hiring opportunity for students.
+        </p>
+
+        <div class="form-grid">
+
+            <div class="field">
+                <label>Job Title</label>
+                <input
+                    v-model="job_title"
+                    placeholder="Software Engineer Intern"
+                />
+            </div>
+
+            <div class="field">
+                <label>Salary (CTC)</label>
+                <input
+                    v-model="salary"
+                    placeholder="1200000"
+                />
+            </div>
+
+        </div>
+
+        <div class="field">
+                <label>Job Description</label>
+
+                <textarea
+                    v-model="job_description"
+                    placeholder="Describe responsibilities, required skills and eligibility"
+                ></textarea>
+            </div>
+
+            <button class="primary-btn" @click="createDrive">
+                Create Drive
+            </button>
+
+        </div>
 
     <h3>Ongoing Drives</h3>
 
@@ -28,7 +98,7 @@
         No upcoming drives
     </div>
 
-    <div v-for="drive in ongoingDrives" :key="drive.id" class="drive-card">
+    <div v-for="drive in ongoingDrives" :key="drive.id" class="glass-card drive-card">
         <p><b>Title:</b> {{ drive.job_title }}</p>
         <p><b>Salary:</b> {{ drive.salary }}</p>
 
@@ -52,7 +122,7 @@
         No closed drives
     </div>
 
-    <div v-for="drive in completedDrives" :key="drive.id" class="drive-card">
+    <div v-for="drive in completedDrives" :key="drive.id" class="glass-card drive-card">
         <p><b>Title:</b> {{ drive.job_title }}</p>
 
         <button @click="viewApplicants(drive.id)">
@@ -71,12 +141,43 @@
             No applicants
         </div>
 
-        <div v-for="app in applicants" :key="app.application_id" class="app-card">
+        <div v-for="app in applicants" :key="app.application_id" class="glass-card applicant-card">
             <button v-if="app.resume" @click="viewResume(app.resume)">
-                View Resume
+                📄 Resume
             </button>
             <p><b>Name:</b> {{ app.student_name }}</p>
-            <p><b>Status:</b> {{ app.status }}</p>
+            <p>
+
+            <b>Status :</b>
+
+            <span
+
+            :class="[
+
+            'badge',
+
+            app.status=='Applied'
+            ?'blue':
+
+            app.status=='Shortlisted'
+            ?'purple':
+
+            app.status=='Interview'
+            ?'orange':
+
+            app.status=='Offer'
+            ?'green':
+
+            app.status=='Placed'
+            ?'darkgreen':'red'
+
+            ]">
+
+            {{ app.status }}
+
+            </span>
+
+            </p>
             <p><b>Email:</b> {{ app.email }}</p>
             <p><b>Phone:</b> {{ app.phone }}</p>
             <p><b>Branch:</b> {{ app.branch }}</p>
@@ -304,39 +405,392 @@ export default {
 }
 </script>
 
-<style>
-.company-dashboard {
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
+<<style>
+
+.company-dashboard{
+
+min-height:100vh;
+
+padding:40px;
+
+background:linear-gradient(
+135deg,
+#2563eb,
+#1e3a8a,
+#0f172a
+);
+
+color:white;
+
 }
 
-.top-bar {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
+.hero-section{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:35px;
+
+flex-wrap:wrap;
+
 }
 
-.summary-box,
-.create-box,
-.drive-card,
-.app-card {
-    border: 1px solid black;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 8px;
+.hero-section h1{
+
+font-size:38px;
+
+margin-bottom:10px;
+
 }
 
-.create-box input,
-.create-box textarea {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 8px;
+.hero-section p{
+
+opacity:.9;
+
 }
 
-button {
-    margin-right: 10px;
-    padding: 6px 12px;
-    cursor: pointer;
+.logout-btn{
+
+padding:12px 25px;
+
+background:#dc2626;
+
+border:none;
+
+border-radius:10px;
+
+color:white;
+
+cursor:pointer;
+
 }
+
+.logout-btn:hover{
+
+background:#b91c1c;
+
+}
+
+.stats-grid{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+gap:20px;
+
+margin-bottom:30px;
+
+}
+
+.stat-card{
+
+background:rgba(150, 38, 38, 0.15);
+
+backdrop-filter:blur(18px);
+
+padding:25px;
+
+border-radius:18px;
+
+text-align:center;
+
+box-shadow:0 10px 25px rgba(0,0,0,.25);
+
+}
+
+.glass-card{
+
+background:rgba(255,255,255,.12);
+
+backdrop-filter:blur(18px);
+
+padding:22px;
+
+border-radius:18px;
+
+margin-bottom:25px;
+
+box-shadow:0 10px 25px rgba(0,0,0,.25);
+
+transition:.3s;
+
+}
+.glass-card:hover{
+
+transform:translateY(-3px);
+
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+    margin-bottom:18px;
+}
+
+.field label{
+
+margin-bottom:8px;
+
+font-weight:600;
+
+color:#dbeafe;
+
+letter-spacing:.3px;
+
+}
+
+.field input,
+.field textarea{
+
+width:100%;
+padding:14px;
+border-radius:10px;
+border:1px solid rgba(255,255,255,.15);
+
+background:#eef4ff;
+
+color:#1f2937;
+
+font-size:15px;
+
+transition:.25s;
+
+}
+
+.field textarea{
+    min-height:120px;
+}
+
+.primary-btn{
+    background:#2563eb;
+    color:white;
+    padding:12px 24px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.primary-btn:hover{
+    background:#1d4ed8;
+}
+
+.create-box button{
+
+padding:12px 22px;
+
+background:#16a34a;
+
+color:white;
+
+border:none;
+
+border-radius:10px;
+
+cursor:pointer;
+
+}
+
+.drive-card{
+
+transition:.25s;
+
+}
+
+.drive-card:hover{
+
+transform:translateY(-5px);
+
+}
+
+.applicant-card{
+
+transition:.25s;
+
+}
+
+.applicant-card:hover{
+
+transform:scale(1.01);
+
+}
+
+button{
+
+padding:10px 18px;
+
+border:none;
+
+border-radius:8px;
+
+cursor:pointer;
+
+margin-right:10px;
+
+margin-top:10px;
+
+transition:.25s;
+
+font-weight:600;
+
+}
+button:hover{
+
+transform:translateY(-2px);
+
+}
+
+.badge{
+
+padding:5px 12px;
+
+border-radius:20px;
+
+font-weight:600;
+
+margin-left:8px;
+
+}
+
+.blue{
+
+background:#2563eb;
+
+}
+
+.purple{
+
+background:#7c3aed;
+
+}
+
+.orange{
+
+background:#f59e0b;
+
+}
+
+.green{
+
+background:#16a34a;
+
+}
+
+.darkgreen{
+
+background:#059669;
+
+}
+
+.red{
+
+background:#dc2626;
+
+}
+.section-subtitle{
+
+margin-top:-8px;
+
+margin-bottom:25px;
+
+opacity:.85;
+
+font-size:15px;
+
+}
+.field input:focus,
+.field textarea:focus{
+
+outline:none;
+
+background:rgb(222, 226, 229);
+
+border:1px solid #60a5fa;
+
+box-shadow:0 0 0 4px rgba(96,165,250,.25);
+
+}
+
+select{
+
+padding:10px;
+
+border-radius:8px;
+
+border:none;
+
+margin-top:10px;
+
+margin-bottom:10px;
+
+}
+input[type="datetime-local"]{
+
+padding:10px;
+
+border-radius:8px;
+
+border:none;
+
+margin-top:10px;
+
+}
+.stat-card{
+
+transition:.3s;
+
+}
+
+.stat-card:hover{
+
+transform:translateY(-4px);
+
+}
+table{
+
+width:100%;
+
+}
+
+table tr{
+
+transition:.25s;
+
+}
+
+table tr:hover{
+
+background:rgba(255,255,255,.08);
+
+}
+
+table td,
+table th{
+
+padding:15px;
+
+}
+.field input,
+.field textarea{
+
+color:#1f2937;
+
+}
+.field input::placeholder,
+.field textarea::placeholder{
+
+color:#6b7280;
+
+}
+
 </style>
+

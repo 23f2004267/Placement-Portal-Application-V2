@@ -294,3 +294,21 @@ code {
     border-right-color: var(--border);
   }
 }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body,
+#app{
+    width:100%;
+    min-height:100%;
+}
+
+body{
+    margin:0;
+    background:#0f172a;
+    font-family:'Poppins',sans-serif;
+}
