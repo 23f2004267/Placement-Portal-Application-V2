@@ -29,3 +29,4 @@ def generate_monthly_report():
         file.write(f"Students Selected: {selected_students}\n")
 
     return "Monthly report generated"
+

@@ -8,7 +8,7 @@
             <h1>Welcome, {{ companyName }}</h1>
 
             <p>
-                
+                Manage your placement drives
             </p>
 
         </div>
@@ -22,6 +22,7 @@
         </button>
 
     </div>
+    <p v-if="message" class="status-message">{{ message }}</p>
 
     <div class="stats-grid">
         <div class="stat-card">
@@ -205,7 +206,7 @@
             </button>
 
             <button
-                v-if="app.status !== 'Placed'"
+                v-if="app.status === 'Offer'"
                 @click="markPlaced(app.application_id)"
             >
                 Mark Placed
@@ -365,7 +366,10 @@ export default {
                 const res = await API.post("/company/mark_placed/" + appId)
 
                 this.message = res.data.message
-                this.viewApplicants(this.selectedDrive)
+
+                await this.viewApplicants(this.selectedDrive)
+                await this.fetchDashboard()
+                await this.fetchDrives()
 
             } catch (err) {
                 this.message = err.response?.data?.message || "Failed to mark placed"
@@ -386,8 +390,14 @@ export default {
                     this.closeApplicants()
                 }
 
-            }catch(err){
-                this.message = "Failed to mark complete"
+            }catch (err) {
+
+                console.log("FULL ERROR:", err.response);
+
+                console.log("BACKEND RESPONSE:", err.response?.data);
+
+                alert(err.response?.data?.message || "Unknown error");
+
             }
         },
 
@@ -405,7 +415,7 @@ export default {
 }
 </script>
 
-<<style>
+<style>
 
 .company-dashboard{
 

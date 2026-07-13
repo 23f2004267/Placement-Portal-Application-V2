@@ -304,19 +304,37 @@ def mark_placed(app_id):
     if drive.company_id != company.id:
         return jsonify({"message": "Unauthorized action"}), 403
 
-    existing = Placement.query.filter_by(student_id=application.student_id).first()
+    print("========== MARK PLACED DEBUG ==========")
+    print("Application ID:", application.id)
+    print("Student ID:", application.student_id)
+    print("Current Status:", application.status)
+
+    existing = Placement.query.filter_by(
+        student_id=application.student_id
+    ).first()
+
+    print("Existing Placement:", existing)
+
     if existing:
+        print("FAILED: Student already has placement")
         return jsonify({"message": "Student already placed"}), 400
 
     if application.status == "Placed":
+        print("FAILED: Application already marked placed")
         return jsonify({"message": "Already placed"}), 400
-    
+
     if application.status != "Offer":
+        print("FAILED: Status is not Offer")
         return jsonify({
             "message": "Student must have Offer status before being marked as Placed"
         }), 400
+
+    print("PASSED ALL VALIDATIONS")
+    print("=======================================")
     
     print("BEFORE:", application.status)
+    
+    print("Updating status from", application.status, "to Placed")
 
     application.status = "Placed"
 
@@ -331,6 +349,7 @@ def mark_placed(app_id):
 
     db.session.add(placement)
     db.session.commit()
+    db.session.refresh(application)
 
     print("COMMIT SUCCESS")
 

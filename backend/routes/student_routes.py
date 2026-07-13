@@ -67,7 +67,6 @@ def view_drives():
     if not student:
         return jsonify({"message": "Access denied"}), 403
 
-    # drives = Drive.query.filter_by(status="Approved").all()
     drives = Drive.query.all()
 
     result = []
